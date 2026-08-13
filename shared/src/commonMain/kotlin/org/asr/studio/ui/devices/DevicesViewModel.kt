@@ -26,6 +26,17 @@ class DevicesViewModel(
     var mode by mutableStateOf(ConnectMode.WIFI)
     var host by mutableStateOf("")
     var port by mutableStateOf("4242")
+    var adbStatusMessage by mutableStateOf<String?>(null)
+
+    fun autoSetupAdb(portVal: Int = 4242) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = org.asr.studio.runAdbReverseAutoSetup(portVal)
+            adbStatusMessage = result
+            if (result.startsWith("✅")) {
+                listen("127.0.0.1", portVal)
+            }
+        }
+    }
 
     fun connect(host: String, port: Int) {
         studioService.tcpClient.connect(host, port)

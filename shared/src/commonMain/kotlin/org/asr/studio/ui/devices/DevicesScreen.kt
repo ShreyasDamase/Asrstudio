@@ -153,6 +153,32 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                     enabled = isInputEnabled
                 )
 
+                if (viewModel.mode == ConnectMode.ADB) {
+                    Button(
+                        onClick = {
+                            val p = viewModel.port.toIntOrNull() ?: 4242
+                            viewModel.autoSetupAdb(p)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = isInputEnabled,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    ) {
+                        Text("⚡ Auto-Configure USB / ADB (1-Click Setup)")
+                    }
+
+                    viewModel.adbStatusMessage?.let { status ->
+                        Text(
+                            text = status,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium,
+                            color = if (status.startsWith("✅")) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)

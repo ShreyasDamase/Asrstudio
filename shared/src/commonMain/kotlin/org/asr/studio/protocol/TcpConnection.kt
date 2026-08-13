@@ -33,7 +33,7 @@ class TcpConnection(
         println("[TcpConnection] start() called")
         readJob = scope.launch(Dispatchers.IO) {
             println("[TcpConnection] Read loop started")
-            val buffer = ByteArray(8192) // Slightly larger buffer
+            val buffer = ByteArray(65536) // 64KB read buffer for high-bandwidth JPEG camera stream
             try {
                 while (true) {
                     val bytesRead = readChannel.readAvailable(buffer)
