@@ -18,7 +18,9 @@ class TcpConnection(
     private val socket: Socket,
     private val scope: CoroutineScope
 ) {
-    private val _frames = MutableSharedFlow<AsrFrame>()
+    // Replay buffer prevents losing early packets (CAPABILITIES, HEARTBEAT)
+    // if the StudioService collector hasn't reached it yet.
+    private val _frames = MutableSharedFlow<AsrFrame>(replay = 64)
     val frames: SharedFlow<AsrFrame> = _frames.asSharedFlow()
 
     private val readChannel = socket.openReadChannel()

@@ -98,10 +98,26 @@ object AsrPacket {
     }
 
     fun computeCrc(header0to23: ByteArray, payload: ByteArray): Long {
+        // Standard IEEE 802.3 CRC32 — matches Java's java.util.zip.CRC32 exactly:
+        //   Polynomial = 0xEDB88320
+        //   Initial    = 0xFFFFFFFF
+        //   Final XOR  = 0xFFFFFFFF (.inv())
         var crc = 0xFFFFFFFF.toInt()
-        crc = updateCrc(crc, header0to23)
-        crc = updateCrc(crc, payload)
-        return crc.inv().toLong() and 0xFFFFFFFFL
+        fun update(bytes: ByteArray) {
+            for (b in bytes) {
+                crc = crc xor (b.toInt() and 0xFF)
+                repeat(8) {
+                    crc = if ((crc and 1) != 0) {
+                        (crc ushr 1) xor 0xEDB88320.toInt()
+                    } else {
+                        crc ushr 1
+                    }
+                }
+            }
+        }
+        update(header0to23)
+        update(payload)
+        return (crc.inv().toLong()) and 0xFFFFFFFFL
     }
 
     internal fun readIntLe(bytes: ByteArray, offset: Int): Int =
@@ -138,22 +154,4 @@ object AsrPacket {
             bytes[offset + index] = ((value ushr (8 * index)) and 0xFF).toByte()
         }
     }
-
-    private fun updateCrc(initial: Int, bytes: ByteArray): Int {
-        var crc = initial
-        bytes.forEach { byte ->
-            var current = (crc xor (byte.toInt() and 0xFF)) and 0xFF
-            repeat(8) {
-                current = if ((current and 1) != 0) {
-                    (current ushr 1) xor CRC32_POLYNOMIAL
-                } else {
-                    current ushr 1
-                }
-            }
-            crc = (crc ushr 8) xor current
-        }
-        return crc
-    }
-
-    private const val CRC32_POLYNOMIAL = 0xEDB88320.toInt()
 }

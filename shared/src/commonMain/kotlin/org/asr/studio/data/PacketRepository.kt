@@ -31,7 +31,9 @@ class PacketRepository(private val capacity: Int = 1000) {
 
     private val ringBuffer = ArrayDeque<PacketEntry>(capacity)
     
-    private var lastSeq: Int? = null
+    // Per-topic last sequence number — ASR uses independent counters per topic,
+    // so we must NOT compare sequence numbers across different topics.
+    private val lastSeqByTopic = mutableMapOf<Byte, Int>()
     private var firstPacketTime: Long? = null
     
     @Synchronized
@@ -55,13 +57,15 @@ class PacketRepository(private val capacity: Int = 1000) {
         newTopicCounts[topic] = (newTopicCounts[topic] ?: 0L) + 1
         
         var newDropCount = currentDiag.dropCount
-        if (lastSeq != null) {
-            val gap = frame.seq - (lastSeq!! + 1)
+        val topicKey = frame.topicId
+        val prevSeq = lastSeqByTopic[topicKey]
+        if (prevSeq != null) {
+            val gap = frame.seq - (prevSeq + 1)
             if (gap > 0) {
                 newDropCount += gap
             }
         }
-        lastSeq = frame.seq
+        lastSeqByTopic[topicKey] = frame.seq
 
         var lastHeartbeat = currentDiag.lastHeartbeatTimeMs
         if (topic == TopicId.HEARTBEAT) {
@@ -86,7 +90,7 @@ class PacketRepository(private val capacity: Int = 1000) {
         ringBuffer.clear()
         _packets.value = emptyList()
         _diagnostics.value = Diagnostics()
-        lastSeq = null
+        lastSeqByTopic.clear()
         firstPacketTime = null
     }
 }

@@ -28,6 +28,11 @@ class TcpClient(
     private var currentConnection: TcpConnection? = null
     private var connectionJob: Job? = null
 
+    // Tracks the live ServerSocket when in Listen mode.
+    // Stored as a field so disconnect() can close it synchronously, eliminating
+    // the race condition where rapid Disconnect→Listen gets "Address already in use".
+    @Volatile private var activeServerSocket: io.ktor.network.sockets.ServerSocket? = null
+
     fun connect(host: String, port: Int) {
         println("[TcpClient] connect() called with $host:$port")
         disconnect()
@@ -57,33 +62,36 @@ class TcpClient(
         disconnect()
         connectionJob = scope.launch(Dispatchers.IO) {
             println("[TcpClient] Binding ServerSocket to 0.0.0.0:$port ...")
-            try {
-                // Explicitly binding to 0.0.0.0 to ensure both IPv4 and IPv6 can connect
-                val serverSocket = aSocket(selectorManager).tcp().bind(hostname = "0.0.0.0", port = port)
-                println("[TcpClient] Server socket bound to ${serverSocket.localAddress}")
-                
-                try {
-                    while (isActive) {
-                        if (_connectionState.value != ConnectionState.Connected) {
-                            _connectionState.value = ConnectionState.Connecting
-                        }
-                        println("[TcpClient] Server state: ${_connectionState.value} (Waiting for client on $port...)")
-                        val socket = serverSocket.accept()
-                        println("[TcpClient] Incoming connection accepted from ${socket.remoteAddress}")
-                        handleSocket(socket)
-                    }
-                } catch (e: Exception) {
-                    if (isActive) {
-                        println("[TcpClient] Accept loop error: ${e.message}")
-                        e.printStackTrace()
-                    }
-                } finally {
-                    println("[TcpClient] Closing server socket")
-                    runCatching { serverSocket.close() }
-                }
+            val serverSocket = try {
+                aSocket(selectorManager).tcp().bind(hostname = "0.0.0.0", port = port)
             } catch (e: Exception) {
                 println("[TcpClient] BIND FAILURE on port $port: ${e.message}")
                 _connectionState.value = ConnectionState.Disconnected
+                return@launch
+            }
+            // Register the socket so disconnect() can close it immediately
+            activeServerSocket = serverSocket
+            println("[TcpClient] Server socket bound to ${serverSocket.localAddress}")
+
+            try {
+                while (isActive) {
+                    if (_connectionState.value != ConnectionState.Connected) {
+                        _connectionState.value = ConnectionState.Connecting
+                    }
+                    println("[TcpClient] Server state: ${_connectionState.value} (Waiting for client on $port...)")
+                    val socket = serverSocket.accept()
+                    println("[TcpClient] Incoming connection accepted from ${socket.remoteAddress}")
+                    handleSocket(socket)
+                }
+            } catch (e: Exception) {
+                if (isActive) {
+                    println("[TcpClient] Accept loop error: ${e.message}")
+                    e.printStackTrace()
+                }
+            } finally {
+                activeServerSocket = null
+                println("[TcpClient] Closing server socket")
+                runCatching { serverSocket.close() }
             }
             println("[TcpClient] Exiting listen loop coroutine")
         }
@@ -126,6 +134,11 @@ class TcpClient(
         println("[TcpClient] disconnect() called")
         connectionJob?.cancel()
         connectionJob = null
+        // Explicitly close the server socket BEFORE the new listen() can attempt to bind.
+        // Without this, the old coroutine's finally block closes it asynchronously after
+        // the new bind attempt, causing "Address already in use".
+        runCatching { activeServerSocket?.close() }
+        activeServerSocket = null
         currentConnection?.stop()
         currentConnection = null
         _connectionState.value = ConnectionState.Disconnected

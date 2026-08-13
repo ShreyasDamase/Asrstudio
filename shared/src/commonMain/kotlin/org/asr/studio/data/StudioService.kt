@@ -18,6 +18,7 @@ class StudioService {
     val tcpClient = TcpClient(scope)
     val packetRepository = PacketRepository()
     val sensorRepository = SensorRepository()
+    val cameraRepository = CameraRepository()
 
     init {
         scope.launch {
@@ -25,6 +26,7 @@ class StudioService {
                 val now = currentTimeMillis()
                 packetRepository.addPacket(frame, now)
                 sensorRepository.processPacket(frame)
+                cameraRepository.processPacket(frame)
             }
         }
         

@@ -45,6 +45,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.collectAsState
 import org.asr.studio.data.StudioService
+import org.asr.studio.ui.camera.CameraScreen
+import org.asr.studio.ui.camera.CameraViewModel
 import org.asr.studio.ui.devices.DevicesScreen
 import org.asr.studio.ui.devices.DevicesViewModel
 import org.asr.studio.ui.diagnostics.DiagnosticsScreen
@@ -121,6 +123,7 @@ fun App() {
     val devicesViewModel = remember { DevicesViewModel(studioService) }
     val diagnosticsViewModel = remember { DiagnosticsViewModel(studioService) }
     val inspectorViewModel = remember { PacketInspectorViewModel(studioService) }
+    val cameraViewModel = remember { CameraViewModel(studioService) }
 
     AsrStudioTheme {
         var selectedScreen by remember { mutableStateOf(AppScreen.Dashboard) }
@@ -148,6 +151,7 @@ fun App() {
                         devicesViewModel = devicesViewModel,
                         diagnosticsViewModel = diagnosticsViewModel,
                         inspectorViewModel = inspectorViewModel,
+                        cameraViewModel = cameraViewModel,
                         modifier = Modifier.weight(1f),
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -285,6 +289,7 @@ private fun ScreenContent(
     devicesViewModel: DevicesViewModel,
     diagnosticsViewModel: DiagnosticsViewModel,
     inspectorViewModel: PacketInspectorViewModel,
+    cameraViewModel: CameraViewModel,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -297,6 +302,7 @@ private fun ScreenContent(
             AppScreen.Devices -> DevicesScreen(devicesViewModel)
             AppScreen.Imu -> DiagnosticsScreen(diagnosticsViewModel)
             AppScreen.Protocol -> PacketInspectorScreen(inspectorViewModel)
+            AppScreen.Camera -> CameraScreen(cameraViewModel)
             else -> PlaceholderContent(screen)
         }
     }
