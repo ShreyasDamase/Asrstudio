@@ -12,25 +12,12 @@ import org.asr.studio.protocol.ConnectionState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 
-private enum class ConnectMode { WIFI, ADB }
+import org.asr.studio.protocol.ConnectMode
 
 @Composable
 fun DevicesScreen(viewModel: DevicesViewModel) {
     val connectionState by viewModel.connectionState.collectAsState()
-    var host by remember { mutableStateOf("") }
-    var port by remember { mutableStateOf("4242") }
-    var mode by remember { mutableStateOf(ConnectMode.WIFI) }
-
-    // Tracks which mode was used to establish the current connection
-    var activeConnectionMode by remember { mutableStateOf<ConnectMode?>(null) }
-
-    LaunchedEffect(connectionState) {
-        if (connectionState != ConnectionState.Disconnected && activeConnectionMode == null) {
-            activeConnectionMode = mode
-        } else if (connectionState == ConnectionState.Disconnected) {
-            activeConnectionMode = null
-        }
-    }
+    val activeConnectionMode by viewModel.activeMode.collectAsState()
 
     val scrollState = rememberScrollState()
 
@@ -60,8 +47,8 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     FilterChip(
-                        selected = mode == ConnectMode.WIFI,
-                        onClick = { mode = ConnectMode.WIFI; if (connectionState == ConnectionState.Disconnected) host = "" },
+                        selected = viewModel.mode == ConnectMode.WIFI,
+                        onClick = { viewModel.mode = ConnectMode.WIFI; if (connectionState == ConnectionState.Disconnected) viewModel.host = "" },
                         label = {
                             Text(
                                 if (activeConnectionMode == ConnectMode.WIFI) "📡  Wi-Fi (ACTIVE)" else "📡  Wi-Fi"
@@ -70,8 +57,8 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                         modifier = Modifier.weight(1f)
                     )
                     FilterChip(
-                        selected = mode == ConnectMode.ADB,
-                        onClick = { mode = ConnectMode.ADB; if (connectionState == ConnectionState.Disconnected) host = "127.0.0.1" },
+                        selected = viewModel.mode == ConnectMode.ADB,
+                        onClick = { viewModel.mode = ConnectMode.ADB; if (connectionState == ConnectionState.Disconnected) viewModel.host = "127.0.0.1" },
                         label = {
                             Text(
                                 if (activeConnectionMode == ConnectMode.ADB) "🔌  USB / ADB (ACTIVE)" else "🔌  USB / ADB"
@@ -81,14 +68,14 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                     )
                 }
                 Text(
-                    text = when (mode) {
+                    text = when (viewModel.mode) {
                         ConnectMode.WIFI ->
                             "Enter the desktop's local IP (e.g. 192.168.1.42). " +
                             "Both devices must be on the same Wi-Fi network. " +
                             "Click Listen (Server) below."
                         ConnectMode.ADB ->
-                            "Run on desktop:  adb forward tcp:4242 tcp:4242\n" +
-                            "Then enter 127.0.0.1 as host and click Listen (Server)."
+                            "Run on desktop terminal:  adb reverse tcp:4242 tcp:4242\n" +
+                            "Click Listen (Server) ★ below. On Android, tap CONNECT (host 127.0.0.1)."
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -97,7 +84,7 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
         }
 
         // ── Mode Locked Warning (if tab doesn't match active connection) ──────
-        if (activeConnectionMode != null && mode != activeConnectionMode) {
+        if (activeConnectionMode != null && viewModel.mode != activeConnectionMode) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -119,7 +106,7 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
         }
 
         // ── Connection configuration ─────────────────────────────────────────
-        val isCurrentModeLocked = activeConnectionMode != null && mode != activeConnectionMode
+        val isCurrentModeLocked = activeConnectionMode != null && viewModel.mode != activeConnectionMode
         val isInputEnabled = connectionState == ConnectionState.Disconnected && !isCurrentModeLocked
 
         Card(
@@ -139,18 +126,18 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                 )
 
                 OutlinedTextField(
-                    value = host,
-                    onValueChange = { host = it },
+                    value = viewModel.host,
+                    onValueChange = { viewModel.host = it },
                     label = {
                         Text(
-                            when (mode) {
+                            when (viewModel.mode) {
                                 ConnectMode.WIFI -> "Desktop IP (e.g. 192.168.1.42)"
                                 ConnectMode.ADB  -> "Host (127.0.0.1 for ADB)"
                             }
                         )
                     },
                     placeholder = {
-                        Text(if (mode == ConnectMode.ADB) "127.0.0.1" else "192.168.1.42")
+                        Text(if (viewModel.mode == ConnectMode.ADB) "127.0.0.1" else "192.168.1.42")
                     },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
@@ -158,8 +145,8 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                 )
 
                 OutlinedTextField(
-                    value = port,
-                    onValueChange = { port = it },
+                    value = viewModel.port,
+                    onValueChange = { viewModel.port = it },
                     label = { Text("Port") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
@@ -172,20 +159,23 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                 ) {
                     Button(
                         onClick = {
-                            val resolvedHost = host.ifBlank {
-                                if (mode == ConnectMode.ADB) "127.0.0.1" else ""
+                            val resolvedHost = viewModel.host.ifBlank {
+                                if (viewModel.mode == ConnectMode.ADB) "127.0.0.1" else ""
                             }
-                            val resolvedPort = port.toIntOrNull() ?: 4242
+                            val resolvedPort = viewModel.port.toIntOrNull() ?: 4242
                             viewModel.connect(resolvedHost, resolvedPort)
                         },
                         modifier = Modifier.weight(1f),
-                        enabled = isInputEnabled && (mode == ConnectMode.ADB || host.isNotBlank())
+                        enabled = isInputEnabled && (viewModel.mode == ConnectMode.ADB || viewModel.host.isNotBlank())
                     ) {
                         Text("Connect (Client)")
                     }
 
                     Button(
-                        onClick = { viewModel.listen(port.toIntOrNull() ?: 4242) },
+                        onClick = {
+                            val listenHost = if (viewModel.mode == ConnectMode.ADB) "127.0.0.1" else "0.0.0.0"
+                            viewModel.listen(listenHost, viewModel.port.toIntOrNull() ?: 4242)
+                        },
                         modifier = Modifier.weight(1f),
                         enabled = isInputEnabled,
                         colors = ButtonDefaults.buttonColors(
@@ -226,7 +216,6 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                 Button(
                     onClick = {
                         viewModel.disconnect()
-                        activeConnectionMode = null
                     },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(

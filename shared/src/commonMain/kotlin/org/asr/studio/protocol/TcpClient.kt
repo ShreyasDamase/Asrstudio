@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+enum class ConnectMode { WIFI, ADB }
+
 class TcpClient(
     private val scope: CoroutineScope
 ) {
@@ -18,6 +20,9 @@ class TcpClient(
     
     private val _connectionState = MutableStateFlow(ConnectionState.Disconnected)
     val connectionState = _connectionState.asStateFlow()
+
+    private val _activeMode = MutableStateFlow<ConnectMode?>(null)
+    val activeMode = _activeMode.asStateFlow()
 
     private val _frames = MutableSharedFlow<AsrFrame>(
         extraBufferCapacity = 1024,
@@ -36,6 +41,7 @@ class TcpClient(
     fun connect(host: String, port: Int) {
         println("[TcpClient] connect() called with $host:$port")
         disconnect()
+        _activeMode.value = if (host == "127.0.0.1" || host == "localhost") ConnectMode.ADB else ConnectMode.WIFI
         connectionJob = scope.launch(Dispatchers.IO) {
             println("[TcpClient] Entering connect loop for $host:$port")
             while (isActive) {
@@ -57,13 +63,14 @@ class TcpClient(
         }
     }
 
-    fun listen(port: Int) {
-        println("[TcpClient] listen() requested on port $port")
+    fun listen(host: String = "0.0.0.0", port: Int = 4242) {
+        println("[TcpClient] listen() requested on $host:$port")
         disconnect()
+        _activeMode.value = if (host == "127.0.0.1" || host == "localhost") ConnectMode.ADB else ConnectMode.WIFI
         connectionJob = scope.launch(Dispatchers.IO) {
-            println("[TcpClient] Binding ServerSocket to 0.0.0.0:$port ...")
+            println("[TcpClient] Binding ServerSocket to $host:$port ...")
             val serverSocket = try {
-                aSocket(selectorManager).tcp().bind(hostname = "0.0.0.0", port = port)
+                aSocket(selectorManager).tcp().bind(hostname = host, port = port)
             } catch (e: Exception) {
                 println("[TcpClient] BIND FAILURE on port $port: ${e.message}")
                 _connectionState.value = ConnectionState.Disconnected
@@ -142,6 +149,7 @@ class TcpClient(
         currentConnection?.stop()
         currentConnection = null
         _connectionState.value = ConnectionState.Disconnected
+        _activeMode.value = null
         println("[TcpClient] State changed to Disconnected (via disconnect)")
     }
 

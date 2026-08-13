@@ -12,17 +12,27 @@ import org.asr.studio.protocol.ConnectionState
 import org.asr.studio.protocol.TopicId
 import org.asr.studio.currentTimeMillis
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import org.asr.studio.protocol.ConnectMode
+
 class DevicesViewModel(
     private val studioService: StudioService
 ) : ViewModel() {
     val connectionState: StateFlow<ConnectionState> = studioService.tcpClient.connectionState
+    val activeMode: StateFlow<ConnectMode?> = studioService.tcpClient.activeMode
+
+    var mode by mutableStateOf(ConnectMode.WIFI)
+    var host by mutableStateOf("")
+    var port by mutableStateOf("4242")
 
     fun connect(host: String, port: Int) {
         studioService.tcpClient.connect(host, port)
     }
 
-    fun listen(port: Int) {
-        studioService.tcpClient.listen(port)
+    fun listen(host: String = "0.0.0.0", port: Int = 4242) {
+        studioService.tcpClient.listen(host, port)
     }
 
     fun disconnect() {
@@ -54,32 +64,25 @@ class DevicesViewModel(
     
     fun stopRuntime() {
         viewModelScope.launch(Dispatchers.IO) {
-            println("[DevicesViewModel] stopRuntime() — sending module.stop for all sensor modules...")
-            // Send module.stop for each sensor module.
-            // We intentionally leave 'transport' and 'diagnostics' running so the
-            // TCP connection stays alive and we can send more commands afterwards.
-            val sensorModules = listOf("camera", "imu", "gps", "audio", "environment", "battery")
-            sensorModules.forEachIndexed { index, moduleId ->
-                val reqId = 2000 + index
-                val json  = """{"cmd":"module.stop","params":{"id":"$moduleId"},"req_id":$reqId}"""
-                val payload = json.encodeToByteArray()
-                val frame = AsrFrame(
-                    version       = AsrVersion.PROTOCOL_VERSION,
-                    topicId       = TopicId.COMMAND.value,
-                    flags         = 0,
-                    deviceId      = 0,
-                    timestampNs   = currentTimeMillis() * 1_000_000,
-                    seq           = index,
-                    payloadLength = payload.size,
-                    storedCrc     = 0,
-                    computedCrc   = 0,
-                    payload       = payload,
-                    crcValid      = true
-                )
-                studioService.tcpClient.send(frame)
-                println("[DevicesViewModel] Sent module.stop for '$moduleId' (req_id=$reqId)")
-            }
-            println("[DevicesViewModel] stopRuntime() — all module.stop commands sent")
+            println("[DevicesViewModel] Sending 'runtime.stop' command...")
+            val reqId = 9999
+            val json  = """{"cmd":"runtime.stop","params":{},"req_id":$reqId}"""
+            val payload = json.encodeToByteArray()
+            val frame = AsrFrame(
+                version       = AsrVersion.PROTOCOL_VERSION,
+                topicId       = TopicId.COMMAND.value,
+                flags         = 0,
+                deviceId      = 0,
+                timestampNs   = currentTimeMillis() * 1_000_000,
+                seq           = 0,
+                payloadLength = payload.size,
+                storedCrc     = 0,
+                computedCrc   = 0,
+                payload       = payload,
+                crcValid      = true
+            )
+            studioService.tcpClient.send(frame)
+            println("[DevicesViewModel] Sent 'runtime.stop' command (req_id=$reqId)")
         }
     }
 }
