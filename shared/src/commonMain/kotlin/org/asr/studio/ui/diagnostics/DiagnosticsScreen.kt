@@ -20,9 +20,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -70,6 +74,8 @@ private enum class ImuTab(val label: String) {
 fun DiagnosticsScreen(viewModel: DiagnosticsViewModel) {
     val diag by viewModel.diagnostics.collectAsState()
     val imu by viewModel.imu.collectAsState()
+    val calibratedImu by viewModel.calibratedImu.collectAsState()
+    val refState by viewModel.orientationReference.collectAsState()
     var selectedTab by remember { mutableStateOf(ImuTab.Overview) }
     val history = remember { mutableStateListOf<ImuData>() }
 
@@ -100,7 +106,7 @@ fun DiagnosticsScreen(viewModel: DiagnosticsViewModel) {
         }
 
         when (selectedTab) {
-            ImuTab.Overview -> ImuOverview(diag, imu, history)
+            ImuTab.Overview -> ImuOverview(diag, imu, calibratedImu, refState, viewModel, history)
             ImuTab.Accelerometer -> VectorSensorTab(
                 title = "Accelerometer",
                 badge = "RAW",
@@ -172,7 +178,14 @@ fun DiagnosticsScreen(viewModel: DiagnosticsViewModel) {
 }
 
 @Composable
-private fun ImuOverview(diag: Diagnostics, imu: ImuData?, history: List<ImuData>) {
+private fun ImuOverview(
+    diag: Diagnostics,
+    imu: ImuData?,
+    calibratedImu: org.asr.studio.math.CalibratedImuData?,
+    refState: org.asr.studio.math.OrientationReference,
+    viewModel: DiagnosticsViewModel,
+    history: List<ImuData>
+) {
     Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -182,6 +195,114 @@ private fun ImuOverview(diag: Diagnostics, imu: ImuData?, history: List<ImuData>
             SensorChip("Gyroscope", "400 Hz", imu != null, Modifier.weight(1f))
             SensorChip("Gravity", "200 Hz", imu != null, Modifier.weight(1f))
             SensorChip("Rotation Vector", "fused", imu != null, Modifier.weight(1f))
+        }
+
+        // ── Orientation Reference / Re-Zero Control Panel ────────────────────
+        DiagnosticsCard {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text("Orientation Reference (Re-Zero Calibration)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Establishes current phone pose as robot zero pose (0°, 0°, 0°). Raw sensor data remains untouched.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+
+                Surface(
+                    color = when (refState.state) {
+                        org.asr.studio.math.ReferenceState.NOT_SET -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
+                        org.asr.studio.math.ReferenceState.SESSION_SET -> Color(0xFF38A169).copy(alpha = 0.15f)
+                        org.asr.studio.math.ReferenceState.SAVED -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                    },
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text(
+                        text = when (refState.state) {
+                            org.asr.studio.math.ReferenceState.NOT_SET -> "Reference: Not Set"
+                            org.asr.studio.math.ReferenceState.SESSION_SET -> "Reference: Session Active ★"
+                            org.asr.studio.math.ReferenceState.SAVED -> "Reference: Saved Mount Calibrated"
+                        },
+                        color = when (refState.state) {
+                            org.asr.studio.math.ReferenceState.NOT_SET -> MaterialTheme.colorScheme.secondary
+                            org.asr.studio.math.ReferenceState.SESSION_SET -> Color(0xFF38A169)
+                            org.asr.studio.math.ReferenceState.SAVED -> MaterialTheme.colorScheme.primary
+                        },
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Button(
+                    onClick = { viewModel.setZero() },
+                    modifier = Modifier.weight(1f),
+                    enabled = imu != null
+                ) {
+                    Text("🎯 Set Current as Zero")
+                }
+
+                OutlinedButton(
+                    onClick = { viewModel.resetReference() },
+                    modifier = Modifier.weight(1f),
+                    enabled = refState.state != org.asr.studio.math.ReferenceState.NOT_SET
+                ) {
+                    Text("↺ Reset Reference")
+                }
+
+                Button(
+                    onClick = { viewModel.saveMountCalibration() },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                    enabled = refState.state != org.asr.studio.math.ReferenceState.NOT_SET
+                ) {
+                    Text("💾 Save Mount Calibration")
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+
+            // Dual Readout: Raw Sensor Orientation vs Robot Relative Orientation
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Raw Readout
+                val rawEuler = calibratedImu?.rawEuler ?: org.asr.studio.math.EulerAngles(0f, 0f, 0f, 0f, 0f, 0f)
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                        .padding(12.dp)
+                ) {
+                    Text("RAW SENSOR ORIENTATION", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(4.dp))
+                    Text("Pitch: ${"%.1f".format(rawEuler.pitchDeg)}°  Roll: ${"%.1f".format(rawEuler.rollDeg)}°  Yaw: ${"%.1f".format(rawEuler.yawDeg)}°", fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                }
+
+                // Robot Relative Readout
+                val relEuler = calibratedImu?.relativeEuler ?: org.asr.studio.math.EulerAngles(0f, 0f, 0f, 0f, 0f, 0f)
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(
+                            if (refState.state != org.asr.studio.math.ReferenceState.NOT_SET) Color(0xFF38A169).copy(alpha = 0.1f) else MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                            RoundedCornerShape(8.dp)
+                        )
+                        .padding(12.dp)
+                ) {
+                    Text("ROBOT RELATIVE ORIENTATION (CALIBRATED)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (refState.state != org.asr.studio.math.ReferenceState.NOT_SET) Color(0xFF38A169) else MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(4.dp))
+                    Text("Pitch: ${"%.1f".format(relEuler.pitchDeg)}°  Roll: ${"%.1f".format(relEuler.rollDeg)}°  Yaw: ${"%.1f".format(relEuler.yawDeg)}°", fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = if (refState.state != org.asr.studio.math.ReferenceState.NOT_SET) Color(0xFF38A169) else MaterialTheme.colorScheme.onSurface)
+                }
+            }
         }
 
         Row(

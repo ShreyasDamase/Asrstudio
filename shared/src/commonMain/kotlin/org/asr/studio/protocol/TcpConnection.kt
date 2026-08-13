@@ -93,6 +93,7 @@ class TcpConnection(
         )
         withContext(Dispatchers.IO) {
             writeChannel.writeFully(bytes)
+            writeChannel.flush()
         }
     }
 

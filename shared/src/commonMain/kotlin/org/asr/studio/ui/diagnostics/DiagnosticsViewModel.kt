@@ -13,4 +13,18 @@ class DiagnosticsViewModel(
     val diagnostics: StateFlow<Diagnostics> = studioService.packetRepository.diagnostics
     val imu: StateFlow<ImuData?> = studioService.sensorRepository.imu
     val gps: StateFlow<GpsData?> = studioService.sensorRepository.gps
+    val calibratedImu: StateFlow<org.asr.studio.math.CalibratedImuData?> = studioService.sensorRepository.calibratedImu
+    val orientationReference: StateFlow<org.asr.studio.math.OrientationReference> = studioService.sensorRepository.orientationReference
+
+    fun setZero() {
+        studioService.sensorRepository.setZero()
+    }
+
+    fun resetReference() {
+        studioService.sensorRepository.resetReference()
+    }
+
+    fun saveMountCalibration() {
+        studioService.sensorRepository.saveMountCalibration()
+    }
 }
