@@ -3,6 +3,7 @@ package org.asr.studio.ui.diagnostics
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.StateFlow
 import org.asr.studio.data.Diagnostics
+import org.asr.studio.data.GpsData
 import org.asr.studio.data.ImuData
 import org.asr.studio.data.StudioService
 
@@ -11,4 +12,5 @@ class DiagnosticsViewModel(
 ) : ViewModel() {
     val diagnostics: StateFlow<Diagnostics> = studioService.packetRepository.diagnostics
     val imu: StateFlow<ImuData?> = studioService.sensorRepository.imu
+    val gps: StateFlow<GpsData?> = studioService.sensorRepository.gps
 }

@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Router
 import androidx.compose.material.icons.filled.Settings
@@ -51,8 +52,12 @@ import org.asr.studio.ui.devices.DevicesScreen
 import org.asr.studio.ui.devices.DevicesViewModel
 import org.asr.studio.ui.diagnostics.DiagnosticsScreen
 import org.asr.studio.ui.diagnostics.DiagnosticsViewModel
+import org.asr.studio.ui.diagnostics.GpsScreen
 import org.asr.studio.ui.inspector.PacketInspectorScreen
 import org.asr.studio.ui.inspector.PacketInspectorViewModel
+import org.asr.studio.ui.docs.DocsScreen
+import org.asr.studio.ui.speaker.SpeakerScreen
+import org.asr.studio.ui.speaker.SpeakerViewModel
 
 private enum class AppScreen(
     val label: String,
@@ -78,6 +83,12 @@ private enum class AppScreen(
         description = "Camera stream diagnostics will be added after protocol compatibility is verified.",
         icon = Icons.Default.PhotoCamera,
     ),
+    Speaker(
+        label = "Speaker",
+        title = "Speaker Diagnostics",
+        description = "Test Text-to-Speech (TTS), voice alerts, and speaker hardware telemetry.",
+        icon = Icons.Default.VolumeUp,
+    ),
     Imu(
         label = "IMU",
         title = "IMU Diagnostics",
@@ -87,7 +98,7 @@ private enum class AppScreen(
     Gps(
         label = "GPS",
         title = "GPS Diagnostics",
-        description = "Location and fix-state visualization will be implemented in a later phase.",
+        description = "Location fix, speed, bearing, and track diagnostics.",
         icon = Icons.Default.Place,
     ),
     Protocol(
@@ -124,6 +135,7 @@ fun App() {
     val diagnosticsViewModel = remember { DiagnosticsViewModel(studioService) }
     val inspectorViewModel = remember { PacketInspectorViewModel(studioService) }
     val cameraViewModel = remember { CameraViewModel(studioService) }
+    val speakerViewModel = remember { SpeakerViewModel(studioService) }
 
     AsrStudioTheme {
         var selectedScreen by remember { mutableStateOf(AppScreen.Dashboard) }
@@ -152,6 +164,7 @@ fun App() {
                         diagnosticsViewModel = diagnosticsViewModel,
                         inspectorViewModel = inspectorViewModel,
                         cameraViewModel = cameraViewModel,
+                        speakerViewModel = speakerViewModel,
                         modifier = Modifier.weight(1f),
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -290,6 +303,7 @@ private fun ScreenContent(
     diagnosticsViewModel: DiagnosticsViewModel,
     inspectorViewModel: PacketInspectorViewModel,
     cameraViewModel: CameraViewModel,
+    speakerViewModel: SpeakerViewModel,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -301,8 +315,11 @@ private fun ScreenContent(
         when (screen) {
             AppScreen.Devices -> DevicesScreen(devicesViewModel)
             AppScreen.Imu -> DiagnosticsScreen(diagnosticsViewModel)
+            AppScreen.Gps -> GpsScreen(diagnosticsViewModel)
             AppScreen.Protocol -> PacketInspectorScreen(inspectorViewModel)
             AppScreen.Camera -> CameraScreen(cameraViewModel)
+            AppScreen.Speaker -> SpeakerScreen(speakerViewModel)
+            AppScreen.Docs -> DocsScreen()
             else -> PlaceholderContent(screen)
         }
     }

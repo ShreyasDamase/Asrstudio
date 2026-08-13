@@ -19,6 +19,7 @@ class StudioService {
     val packetRepository = PacketRepository()
     val sensorRepository = SensorRepository()
     val cameraRepository = CameraRepository()
+    val speakerRepository = SpeakerRepository({ this }, scope)
 
     init {
         scope.launch {
