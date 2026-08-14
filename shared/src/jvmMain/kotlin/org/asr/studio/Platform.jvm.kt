@@ -26,3 +26,62 @@ actual fun runAdbReverseAutoSetup(port: Int): String {
         "⚠️ Could not run adb command: ${e.message}"
     }
 }
+
+actual fun runAdbShell(vararg args: String): String {
+    return try {
+        val cmd = listOf("adb", "shell") + args.toList()
+        val pb = ProcessBuilder(cmd).redirectErrorStream(true)
+        val process = pb.start()
+        val output = process.inputStream.bufferedReader().readText().trim()
+        process.waitFor()
+        output.ifBlank { "✅ Command sent" }
+    } catch (e: Exception) {
+        "⚠️ ADB error: ${e.message}"
+    }
+}
+
+actual fun loadModelAsset(filename: String): String {
+    val candidates = listOf(
+        java.io.File(filename),
+        java.io.File("shared/src/commonMain/composeResources/files/$filename"),
+        java.io.File("../$filename"),
+        java.io.File("/Users/shreyasdamase/Vanguard/ASR/asrstudio/$filename")
+    )
+    for (f in candidates) {
+        if (f.exists()) return f.readText()
+    }
+    val stream = JVMPlatform::class.java.classLoader.getResourceAsStream(filename)
+        ?: JVMPlatform::class.java.classLoader.getResourceAsStream("files/$filename")
+    return stream?.bufferedReader()?.readText() ?: ""
+}
+
+actual fun playMonitorFeedback(active: Boolean) {
+    // Silent mode or visual
+}
+
+private var audioLine: javax.sound.sampled.SourceDataLine? = null
+
+actual fun playAudioPcm(pcmBytes: ByteArray, offset: Int, length: Int) {
+    try {
+        if (audioLine == null) {
+            val format = javax.sound.sampled.AudioFormat(
+                16000.0f,  // 16 kHz sample rate
+                16,        // 16-bit
+                1,         // Mono
+                true,      // Signed PCM
+                false      // Little Endian
+            )
+            val info = javax.sound.sampled.DataLine.Info(javax.sound.sampled.SourceDataLine::class.java, format)
+            if (javax.sound.sampled.AudioSystem.isLineSupported(info)) {
+                val line = javax.sound.sampled.AudioSystem.getLine(info) as javax.sound.sampled.SourceDataLine
+                line.open(format, 4096)
+                line.start()
+                audioLine = line
+            }
+        }
+        audioLine?.write(pcmBytes, offset, length)
+    } catch (e: Exception) {
+        // Output device busy or unavailable
+    }
+}
+

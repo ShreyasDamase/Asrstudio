@@ -26,6 +26,7 @@ fun SpeakerScreen(viewModel: SpeakerViewModel) {
     val logEvents by viewModel.logEvents.collectAsState()
 
     var customText by remember { mutableStateOf("ASR speaker test successful") }
+    val naturalMode by viewModel.naturalMode.collectAsState()
     val scrollState = rememberScrollState()
 
     Column(
@@ -177,6 +178,52 @@ fun SpeakerScreen(viewModel: SpeakerViewModel) {
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
+
+                // Natural mode toggle
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text("Speech Mode", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                        Text(
+                            if (naturalMode) "SSML naturalisation active" else "Raw text — robotic output",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = naturalMode,
+                        onCheckedChange = { viewModel.setNaturalMode(it) },
+                        thumbContent = {
+                            Text(if (naturalMode) "🗣" else "🤖", fontSize = 10.sp)
+                        }
+                    )
+                }
+
+                if (naturalMode && customText.isNotBlank()) {
+                    val ssmlPreview = remember(customText) { 
+                        org.asr.studio.speech.SpeechNaturaliser.preview(customText) 
+                    }
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("✨ Natural Speech Preview", style = MaterialTheme.typography.labelSmall, 
+                                 fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            Text(
+                                text = ssmlPreview,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
 
                 Button(
                     onClick = { viewModel.speak(customText) },

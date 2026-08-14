@@ -40,7 +40,7 @@ class SpeakerRepository(
     private val _logEvents = MutableStateFlow<List<SpeakerLogEvent>>(emptyList())
     val logEvents: StateFlow<List<SpeakerLogEvent>> = _logEvents.asStateFlow()
 
-    fun speak(text: String) {
+    fun speak(text: String, isSSML: Boolean = false) {
         val now = currentTimeMillis()
         val current = _telemetry.value
         val newSent = current.commandsSent + 1
@@ -56,13 +56,17 @@ class SpeakerRepository(
         val newEvent = SpeakerLogEvent(
             timestampMs = now,
             text = text,
-            status = "SPEAK SUCCESS"
+            status = if (isSSML) "SSML SPEAK SUCCESS" else "SPEAK SUCCESS"
         )
         _logEvents.value = (listOf(newEvent) + _logEvents.value).take(50)
 
         // Send JSON command frame over TCP
         val reqId = 3000 + newSent
-        val json = """{"cmd":"speaker.speak","params":{"text":"${text.replace("\"", "'")}"},"req_id":$reqId}"""
+        val json = if (isSSML) {
+            """{"cmd":"speaker.speak","params":{"text":"${text.replace("\"", "'")}","ssml":true},"req_id":$reqId}"""
+        } else {
+            """{"cmd":"speaker.speak","params":{"text":"${text.replace("\"", "'")}"},"req_id":$reqId}"""
+        }
         val payload = json.encodeToByteArray()
         val frame = AsrFrame(
             version = AsrVersion.PROTOCOL_VERSION,

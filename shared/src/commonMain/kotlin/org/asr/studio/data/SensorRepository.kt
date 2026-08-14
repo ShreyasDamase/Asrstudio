@@ -12,6 +12,7 @@ data class ImuData(
     val gyroX: Float, val gyroY: Float, val gyroZ: Float,
     val gravityX: Float, val gravityY: Float, val gravityZ: Float,
     val rotW: Float, val rotX: Float, val rotY: Float, val rotZ: Float,
+    val magX: Float = 0f, val magY: Float = 0f, val magZ: Float = 0f,
     val timestampNs: Long
 )
 
@@ -29,9 +30,37 @@ data class BatteryData(
     val timestampNs: Long
 )
 
+data class LightSensorData(
+    val lux: Float,
+    val timestampNs: Long
+)
+
+data class FlashlightState(
+    val isOn: Boolean,
+    val brightness: Float,
+    val timestampNs: Long
+)
+
+data class MicData(
+    val rmsLevel: Float,
+    val peakLevel: Float,
+    val noiseFloor: Float,
+    val voiceActive: Boolean,
+    val sampleRateHz: Int,
+    val timestampNs: Long
+)
 class SensorRepository {
     private val _imu = MutableStateFlow<ImuData?>(null)
     val imu: StateFlow<ImuData?> = _imu.asStateFlow()
+
+    private val _lightSensor = MutableStateFlow<LightSensorData?>(null)
+    val lightSensor: StateFlow<LightSensorData?> = _lightSensor.asStateFlow()
+
+    private val _flashlight = MutableStateFlow<FlashlightState?>(null)
+    val flashlight: StateFlow<FlashlightState?> = _flashlight.asStateFlow()
+
+    private val _mic = MutableStateFlow<MicData?>(null)
+    val mic: StateFlow<MicData?> = _mic.asStateFlow()
 
     private val _orientationReference = MutableStateFlow(org.asr.studio.math.OrientationReference())
     val orientationReference: StateFlow<org.asr.studio.math.OrientationReference> = _orientationReference.asStateFlow()
@@ -44,6 +73,46 @@ class SensorRepository {
 
     private val _battery = MutableStateFlow<BatteryData?>(null)
     val battery: StateFlow<BatteryData?> = _battery.asStateFlow()
+
+    // Persistent hardware module power states (survives screen navigation)
+    private val _modulePowerStates = MutableStateFlow<Map<String, Boolean>>(
+        mapOf(
+            "camera" to true,
+            "imu" to true,
+            "gps" to true,
+            "audio" to true,
+            "speaker" to true,
+            "environment" to true
+        )
+    )
+    val modulePowerStates: StateFlow<Map<String, Boolean>> = _modulePowerStates.asStateFlow()
+
+    fun setModulePower(moduleId: String, active: Boolean) {
+        _modulePowerStates.value = _modulePowerStates.value.toMutableMap().apply {
+            put(moduleId, active)
+        }
+        if (moduleId == "audio" && !active) {
+            _mic.value = null
+        }
+    }
+
+    fun clearMic() {
+        _mic.value = null
+    }
+
+    fun setAllModulesPower(active: Boolean) {
+        _modulePowerStates.value = mapOf(
+            "camera" to active,
+            "imu" to active,
+            "gps" to active,
+            "audio" to active,
+            "speaker" to active,
+            "environment" to active
+        )
+        if (!active) {
+            _mic.value = null
+        }
+    }
 
     fun setZero() {
         val currentImu = _imu.value ?: return
@@ -92,14 +161,35 @@ class SensorRepository {
             TopicId.IMU -> decodeImu(frame)
             TopicId.GPS -> decodeGps(frame)
             TopicId.BATTERY -> decodeBattery(frame)
+            TopicId.AUDIO -> decodeMic(frame)
+            TopicId.AUDIO_RAW -> decodeRawAudio(frame)
+            TopicId.FLASHLIGHT -> decodeFlashlight(frame)
+            TopicId.LIGHT_SENSOR -> decodeLightSensor(frame)
             else -> { /* Other topics handled elsewhere or ignored */ }
+        }
+    }
+
+    var isLiveSpeakerOutputEnabled: Boolean = false
+
+    private fun readShortLe(b: ByteArray, offset: Int): Short {
+        return ((b[offset].toInt() and 0xFF) or ((b[offset + 1].toInt() and 0xFF) shl 8)).toShort()
+    }
+
+    private fun decodeRawAudio(frame: AsrFrame) {
+        val p = frame.payload
+        if (p.size < 3) return
+        if (isLiveSpeakerOutputEnabled) {
+            val sampleCount = readShortLe(p, 1).toInt()
+            val byteCount = sampleCount * 2
+            if (p.size >= 3 + byteCount) {
+                org.asr.studio.playAudioPcm(p, 3, byteCount)
+            }
         }
     }
 
     private fun decodeImu(frame: AsrFrame) {
         val p = frame.payload
         if (p.size < 53) return
-        // p[0] is payload version (0x01)
         val rawData = ImuData(
             accelX = readFloatLe(p, 1),
             accelY = readFloatLe(p, 5),
@@ -114,10 +204,45 @@ class SensorRepository {
             rotX = readFloatLe(p, 41),
             rotY = readFloatLe(p, 45),
             rotZ = readFloatLe(p, 49),
+            magX = if (p.size >= 65) readFloatLe(p, 53) else 0f,
+            magY = if (p.size >= 65) readFloatLe(p, 57) else 0f,
+            magZ = if (p.size >= 65) readFloatLe(p, 61) else 0f,
             timestampNs = frame.timestampNs
         )
         _imu.value = rawData
         recomputeCalibratedImu(rawData)
+    }
+
+    private fun decodeMic(frame: AsrFrame) {
+        val p = frame.payload
+        if (p.size < 14) return
+        _mic.value = MicData(
+            rmsLevel = readFloatLe(p, 1).coerceIn(0f, 1f),
+            peakLevel = readFloatLe(p, 5).coerceIn(0f, 1f),
+            noiseFloor = readFloatLe(p, 9),
+            voiceActive = p[13].toInt() != 0,
+            sampleRateHz = if (p.size >= 18) AsrPacket.readIntLe(p, 14) else 16000,
+            timestampNs = frame.timestampNs
+        )
+    }
+
+    private fun decodeFlashlight(frame: AsrFrame) {
+        val p = frame.payload
+        if (p.size < 6) return
+        _flashlight.value = FlashlightState(
+            isOn = p[1].toInt() != 0,
+            brightness = readFloatLe(p, 2).coerceIn(0f, 1f),
+            timestampNs = frame.timestampNs
+        )
+    }
+
+    private fun decodeLightSensor(frame: AsrFrame) {
+        val p = frame.payload
+        if (p.size < 5) return
+        _lightSensor.value = LightSensorData(
+            lux = readFloatLe(p, 1).coerceAtLeast(0f),
+            timestampNs = frame.timestampNs
+        )
     }
 
     private fun recomputeCalibratedImu(rawData: ImuData) {

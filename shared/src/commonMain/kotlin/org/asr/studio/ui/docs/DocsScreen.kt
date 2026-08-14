@@ -31,7 +31,8 @@ private enum class DocSection(
     Connectivity("Connectivity (Wi-Fi & ADB)", Icons.Default.Router),
     HardwareModules("Hardware Modules", Icons.Default.Memory),
     AdbReference("ADB Command Reference", Icons.Default.Code),
-    Ros2Integration("ROS 2 & Protocol", Icons.Default.VolumeUp)
+    Ros2Integration("ROS 2 & Protocol", Icons.Default.VolumeUp),
+    SensorCatalog("Android Sensor Catalog", Icons.Default.Memory)
 }
 
 @Composable
@@ -79,6 +80,7 @@ fun DocsScreen() {
                 DocSection.HardwareModules -> HardwareModulesDoc()
                 DocSection.AdbReference -> AdbReferenceDoc()
                 DocSection.Ros2Integration -> Ros2IntegrationDoc()
+                DocSection.SensorCatalog -> SensorCatalogDoc()
             }
         }
     }
@@ -176,10 +178,23 @@ private fun HardwareModulesDoc() {
 
         DocCard(title = "🎤 Audio Microphone Module (id: 'audio')") {
             DocBullet("Format", "16 kHz Mono PCM 16-bit Signed Little Endian.")
+            DocBullet("Telemetry", "RMS level, peak level, and VAD sent at ~20 Hz.")
+            DocBullet("Topic ID", "0x05 (AUDIO)")
         }
 
         DocCard(title = "📍 GPS Module (id: 'gps')") {
             DocBullet("Fields", "Latitude, Longitude, Altitude (m ASL), Accuracy (m), Bearing, Speed (m/s).")
+            DocBullet("Topic ID", "0x03 (GPS)")
+        }
+
+        DocCard(title = "💡 Flashlight Module (id: 'flashlight')") {
+            DocBullet("Control", "Can toggle on/off and set brightness (0-100%).")
+            DocBullet("Topic ID", "0x0E (FLASHLIGHT)")
+        }
+
+        DocCard(title = "☀️ Ambient Light Sensor (id: 'light_sensor')") {
+            DocBullet("Output", "Ambient light level in lux.")
+            DocBullet("Topic ID", "0x0F (LIGHT_SENSOR)")
         }
     }
 }
@@ -280,6 +295,133 @@ Offset  Type     Field          Description
             DocBullet("/asr/imu/data", "sensor_msgs/msg/Imu (Accel + Gyro + Quaternion)")
             DocBullet("/asr/gps/fix", "sensor_msgs/msg/NavSatFix")
             DocBullet("/asr/speaker/goal", "std_msgs/msg/String (TTS Speech Command)")
+            DocBullet("/asr/audio/level", "asr_msgs/msg/AudioLevel (Telemetry)")
+            DocBullet("/asr/audio/raw", "std_msgs/msg/Int16MultiArray (Raw audio)")
+            DocBullet("/asr/flashlight/cmd", "asr_msgs/msg/FlashlightCmd")
+            DocBullet("/asr/flashlight/state", "asr_msgs/msg/FlashlightState")
+            DocBullet("/asr/light_sensor/lux", "sensor_msgs/msg/Illuminance")
+            DocBullet("/asr/battery/state", "sensor_msgs/msg/BatteryState")
+        }
+    }
+}
+
+// ── 6. Sensor Catalog Document ───────────────────────────────────────────────
+@Composable
+private fun SensorCatalogDoc() {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Text("📱 Android Sensor Catalog — ROS 2 Topic Reference",
+             style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Text(
+            "Every sensor listed below is available on a standard Android smartphone. " +
+            "ASR exposes each as a typed ROS 2 topic — no additional hardware purchase required. " +
+            "Connect your phone via USB or Wi-Fi to unlock a complete robotics sensor suite.",
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+        DocCard(title = "📷 Camera  —  /asr/camera/compressed") {
+            DocBullet("ROS 2 msg", "sensor_msgs/msg/CompressedImage (JPEG)")
+            DocBullet("Resolution", "640×480 to 1280×720, JPEG quality 75")
+            DocBullet("Rate", "30 FPS")
+            DocBullet("Topic ID", "0x01 (CAMERA_FRAME)")
+            DocCodeBlock("""
+ros2 topic echo /asr/camera/compressed --no-arr
+# or view with:
+ros2 run rqt_image_view rqt_image_view
+            """.trimIndent())
+        }
+
+        DocCard(title = "🧭 IMU (Accel + Gyro + Rotation)  —  /asr/imu/data") {
+            DocBullet("ROS 2 msg", "sensor_msgs/msg/Imu")
+            DocBullet("Quaternion", "Full [w, x, y, z] at 100 Hz from Android Rotation Vector sensor")
+            DocBullet("Accel", "m/s² linear acceleration (gravity removed)")
+            DocBullet("Gyro", "rad/s angular velocity")
+            DocBullet("Topic ID", "0x02 (IMU)")
+            DocCodeBlock("""
+import rclpy
+from sensor_msgs.msg import Imu
+
+def imu_callback(msg):
+    q = msg.orientation
+    print(f'Quaternion: w={q.w:.3f} x={q.x:.3f} y={q.y:.3f} z={q.z:.3f}')
+    print(f'Gyro: {msg.angular_velocity.x:.3f} rad/s')
+
+node.create_subscription(Imu, '/asr/imu/data', imu_callback, 10)
+            """.trimIndent())
+        }
+
+        DocCard(title = "🧲 Magnetometer  —  /asr/imu/magnetic_field") {
+            DocBullet("ROS 2 msg", "sensor_msgs/msg/MagneticField")
+            DocBullet("Unit", "microtesla (μT), typically 25–65 μT (Earth's field)")
+            DocBullet("Rate", "50 Hz")
+            DocBullet("Note", "Fused with accelerometer for stable yaw. Avoid placing near motors/magnets.")
+        }
+
+        DocCard(title = "📍 GPS  —  /asr/gps/fix") {
+            DocBullet("ROS 2 msg", "sensor_msgs/msg/NavSatFix")
+            DocBullet("Fields", "Latitude, Longitude, Altitude (m ASL), Accuracy (m), Bearing, Speed (m/s)")
+            DocBullet("Rate", "1 Hz (GPS hardware limited)")
+            DocBullet("Topic ID", "0x03 (GPS)")
+        }
+
+        DocCard(title = "🔊 Speaker / TTS  —  /asr/speaker/say") {
+            DocBullet("ROS 2 msg", "std_msgs/msg/String (plain text or SSML)")
+            DocBullet("Engine", "Android TextToSpeech — supports SSML markup for natural speech")
+            DocBullet("SSML", "Send <speak><prosody rate='95%'>...</prosody></speak> for human-sounding output")
+            DocBullet("Topic ID", "0x08 (COMMAND)")
+            DocCodeBlock("""
+# Publish speech command from ROS 2
+ros2 topic pub /asr/speaker/say std_msgs/msg/String "{data: 'Warning, obstacle detected'}"
+            """.trimIndent())
+        }
+
+        DocCard(title = "🎤 Microphone Level  —  /asr/audio/level") {
+            DocBullet("ROS 2 msg", "asr_msgs/msg/AudioLevel (custom)")
+            DocBullet("Fields", "rms_level (0–1), peak_level (0–1), noise_floor_dbfs, voice_active (bool), sample_rate_hz")
+            DocBullet("Rate", "~20 Hz telemetry")
+            DocBullet("Raw PCM", "/asr/audio/raw — std_msgs/msg/Int16MultiArray — 16 kHz mono 16-bit")
+            DocBullet("Topic ID", "0x05 (AUDIO)")
+            DocBullet("Use case", "Speech recognition pipeline: subscribe /asr/audio/raw → feed to Whisper/Vosk")
+        }
+
+        DocCard(title = "💡 Flashlight  —  /asr/flashlight/cmd & /asr/flashlight/state") {
+            DocBullet("Command msg", "asr_msgs/msg/FlashlightCmd — fields: on (bool), brightness (float32, 0–1)")
+            DocBullet("State msg", "asr_msgs/msg/FlashlightState — current on/brightness reported by phone")
+            DocBullet("Topic ID", "0x0E (FLASHLIGHT)")
+            DocBullet("Use case", "Dark environment navigation — trigger when ambient lux < 50")
+            DocCodeBlock("""
+# Toggle flashlight on from ROS 2
+ros2 topic pub /asr/flashlight/cmd asr_msgs/msg/FlashlightCmd "{on: true, brightness: 1.0}"
+            """.trimIndent())
+        }
+
+        DocCard(title = "☀️ Ambient Light Sensor  —  /asr/light_sensor/lux") {
+            DocBullet("ROS 2 msg", "sensor_msgs/msg/Illuminance")
+            DocBullet("Unit", "lux (< 10=very dark, 10–50=dark, 200–1000=indoor, 1000–10000=daylight)")
+            DocBullet("Topic ID", "0x0F (LIGHT_SENSOR)")
+            DocBullet("Use case", "Auto-trigger flashlight when entering dark spaces")
+        }
+
+        DocCard(title = "🔋 Battery  —  /asr/battery/state") {
+            DocBullet("ROS 2 msg", "sensor_msgs/msg/BatteryState")
+            DocBullet("Fields", "Level (0–1), Temperature (°C), Voltage (V), IsCharging (bool)")
+            DocBullet("Topic ID", "0x04 (BATTERY)")
+        }
+
+        DocCard(title = "Why Use Android Instead of Dedicated Hardware?") {
+            Text(
+                "• A mid-range Android phone includes: 6-axis IMU, GPS, magnetometer, camera (often 2-3 cameras), " +
+                "microphone, ambient light sensor, barometer, proximity sensor, speaker — all in one ${'$'}200 device.",
+                style = MaterialTheme.typography.bodySmall
+            )
+            Text(
+                "• Dedicated robotics sensors (LIDAR, stereo cameras, IMUs) cost ${'$'}500–${'$'}5000 each.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                "• ASR makes robotics accessible to students, hobbyists, and researchers worldwide " +
+                "by treating the phone everyone already owns as a first-class robotics sensor platform.",
+                style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 }

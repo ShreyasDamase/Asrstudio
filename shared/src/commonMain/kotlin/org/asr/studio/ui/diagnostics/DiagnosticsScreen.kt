@@ -60,6 +60,9 @@ import kotlin.math.sqrt
 import org.asr.studio.currentTimeMillis
 import org.asr.studio.data.Diagnostics
 import org.asr.studio.data.ImuData
+import org.joml.Matrix3f
+import org.joml.Quaternionf
+import org.joml.Vector3f
 
 private enum class ImuTab(val label: String) {
     Overview("Overview"),
@@ -68,6 +71,7 @@ private enum class ImuTab(val label: String) {
     Gravity("Gravity"),
     Rotation("Rotation Vector"),
     LinearAcceleration("Linear Accel."),
+    Magnetometer("Magnetometer"),
 }
 
 @Composable
@@ -153,6 +157,21 @@ fun DiagnosticsScreen(viewModel: DiagnosticsViewModel) {
                 relation = "Accelerometer minus Gravity gives Linear Acceleration.",
             )
             ImuTab.Rotation -> RotationTab(imu)
+            ImuTab.Magnetometer -> VectorSensorTab(
+                title = "Magnetometer",
+                badge = "RAW",
+                unit = "μT",
+                x = imu?.magX ?: 0f,
+                y = imu?.magY ?: 0f,
+                z = imu?.magZ ?: 0f,
+                magnitude = imu?.let { vectorMagnitude(it.magX, it.magY, it.magZ) } ?: 0f,
+                range = 100f,
+                rate = "50 Hz",
+                packetRate = diag.packetRate,
+                history = history.map { Triple(it.magX, it.magY, it.magZ) },
+                explanation = "Raw magnetic field strength measured by the phone's magnetometer in microtesla (μT). The Earth's field is typically 25–65 μT depending on location.",
+                relation = "Magnetometer readings are fused with accelerometer data to produce stable absolute heading (yaw) in the Rotation Vector. Near metal objects or electronics, readings may be disturbed.",
+            )
             ImuTab.LinearAcceleration -> {
                 val lx = (imu?.accelX ?: 0f) - (imu?.gravityX ?: 0f)
                 val ly = (imu?.accelY ?: 0f) - (imu?.gravityY ?: 0f)
@@ -195,6 +214,7 @@ private fun ImuOverview(
             SensorChip("Gyroscope", "400 Hz", imu != null, Modifier.weight(1f))
             SensorChip("Gravity", "200 Hz", imu != null, Modifier.weight(1f))
             SensorChip("Rotation Vector", "fused", imu != null, Modifier.weight(1f))
+            SensorChip("Magnetometer", "50 Hz", imu != null, Modifier.weight(1f))
         }
 
         // ── Orientation Reference / Re-Zero Control Panel ────────────────────
@@ -569,24 +589,7 @@ private fun TimeSeriesCanvas(values: List<Triple<Float, Float, Float>>, range: F
 
 @Composable
 private fun OrientationCanvas(imu: ImuData?, modifier: Modifier) {
-    val pose = imu.toPhonePose()
-    val primary = MaterialTheme.colorScheme.primary
-    Canvas(modifier = modifier.background(Color(0xFF0B0E11), RoundedCornerShape(8.dp))) {
-        val center = Offset(size.width * 0.52f, size.height * 0.52f)
-        val gridY = size.height * 0.76f
-        repeat(12) { i ->
-            val x = size.width * (0.1f + i * 0.075f)
-            drawLine(Color(0xFF1B2230), Offset(x, gridY - 75f), Offset(x + 160f, gridY + 15f), 1f)
-        }
-        repeat(8) { i ->
-            val y = gridY - 92f + i * 18f
-            drawLine(Color(0xFF1B2230), Offset(size.width * 0.12f, y + 80f), Offset(size.width * 0.9f, y - 40f), 1f)
-        }
-        drawPhoneSilhouette(center, pose)
-        val gravityAngle = atan2(pose.gravityY, pose.gravityX)
-        drawArrow(center, gravityAngle, min(size.width, size.height) * 0.22f, Color(0xFFE879B9))
-        drawCircle(primary, 4f, center)
-    }
+    ThreeJsViewport(imu = imu, modifier = modifier)
 }
 
 @Composable
@@ -611,58 +614,35 @@ private fun AttitudeCanvas(imu: ImuData?, modifier: Modifier) {
                 lineTo(lowLeft.x, lowLeft.y)
                 close()
             }
-            drawPath(earth, Color(0xFF352010))
+            drawPath(earth, Color(0xFF22170D))
+            drawLine(Color(0xFF43D9C5), left, right, 2.5f)
         }
-        drawCircle(Color(0xFF5EEAD4), 4f, center)
-        drawLine(Color(0xFFE8EAF0), Offset(center.x - 34f, center.y), Offset(center.x + 34f, center.y), 3f)
-        drawCircle(Color(0xFF4A5362), radius, center, style = Stroke(3f))
-        repeat(9) { i ->
-            val y = center.y - radius * 0.75f + i * radius * 0.18f
-            drawLine(Color(0x667D8798), Offset(center.x - 28f, y), Offset(center.x + 28f, y), 2f)
-        }
+        drawCircle(Color(0xFF43D9C5), radius, center, style = Stroke(width = 2.5f))
+        val needleLen = radius * 0.72f
+        val levelAngle = atan2(pose.gravityX, pose.gravityY)
+        val nx = center.x + sin(levelAngle) * needleLen
+        val ny = center.y - cos(levelAngle) * needleLen
+        drawLine(Color(0xFFFF6B6B), center, Offset(nx, ny), 3f, StrokeCap.Round)
+        drawCircle(Color(0xFF43D9C5), 5f, center)
     }
 }
 
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawArrow(origin: Offset, angle: Float, length: Float, color: Color) {
-    val end = Offset(origin.x + cos(angle) * length, origin.y + sin(angle) * length * 0.58f)
-    drawLine(color, origin, end, strokeWidth = 2.3f, cap = StrokeCap.Round)
-    drawCircle(color, 8f, end)
-}
-
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawPhoneSilhouette(center: Offset, pose: PhonePose) {
-    val base = min(size.width, size.height)
-    val portrait = pose.kind != PoseKind.Landscape
-    val flat = pose.kind == PoseKind.Flat
-    val w = if (portrait) base * 0.18f else base * 0.34f
-    val h = if (portrait) base * 0.38f else base * 0.20f
-    val squish = if (flat) 0.52f else 1f
-    val angle = when (pose.kind) {
-        PoseKind.Portrait -> if (pose.gravityY >= 0f) 0f else PI.toFloat()
-        PoseKind.Landscape -> if (pose.gravityX >= 0f) PI.toFloat() / 2f else -PI.toFloat() / 2f
-        PoseKind.Flat -> atan2(pose.gravityY, pose.gravityX) + PI.toFloat() / 2f
-        PoseKind.Unknown -> 0f
-    }
-    val corners = listOf(
-        Offset(center.x - w, center.y - h * squish),
-        Offset(center.x + w, center.y - h * squish),
-        Offset(center.x + w, center.y + h * squish),
-        Offset(center.x - w, center.y + h * squish),
-    ).map { rotate(it, center, angle) }
-    val body = Path().apply {
-        moveTo(corners[0].x, corners[0].y)
-        corners.drop(1).forEach { lineTo(it.x, it.y) }
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.draw3DArrow(start: Offset, end: Offset, color: Color) {
+    drawLine(color, start, end, strokeWidth = 2.3f, cap = StrokeCap.Round)
+    val angle = atan2(end.y - start.y, end.x - start.x)
+    val arrowLen = 12f
+    val p1 = Offset(end.x - arrowLen * cos(angle - 0.5f), end.y - arrowLen * sin(angle - 0.5f))
+    val p2 = Offset(end.x - arrowLen * cos(angle + 0.5f), end.y - arrowLen * sin(angle + 0.5f))
+    val path = Path().apply {
+        moveTo(end.x, end.y)
+        lineTo(p1.x, p1.y)
+        lineTo(p2.x, p2.y)
         close()
     }
-    drawPath(body, Color(0xFF2F9F91))
-    drawPath(body, Color(0xFF43D9C5), style = Stroke(3f))
-
-    val topCenter = rotate(Offset(center.x, center.y - h * squish + 16f), center, angle)
-    val topLeft = rotate(Offset(center.x - w * 0.32f, center.y - h * squish + 16f), center, angle)
-    val topRight = rotate(Offset(center.x + w * 0.32f, center.y - h * squish + 16f), center, angle)
-    drawLine(Color(0xFFE8EAF0), topLeft, topRight, strokeWidth = 4f, cap = StrokeCap.Round)
-    drawCircle(Color(0xFFFFD166), 5f, topCenter)
+    drawPath(path, color)
 }
 
+/** 2D rotation helper used by AttitudeCanvas (artificial horizon). */
 private fun rotate(point: Offset, center: Offset, radians: Float): Offset {
     val s = sin(radians)
     val c = cos(radians)
@@ -670,6 +650,7 @@ private fun rotate(point: Offset, center: Offset, radians: Float): Offset {
     val y = point.y - center.y
     return Offset(center.x + x * c - y * s, center.y + x * s + y * c)
 }
+
 
 @Composable
 private fun AxisLegend(endLabel: String = "") {

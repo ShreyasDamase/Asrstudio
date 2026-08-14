@@ -19,6 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Place
@@ -58,6 +59,7 @@ import org.asr.studio.ui.inspector.PacketInspectorViewModel
 import org.asr.studio.ui.docs.DocsScreen
 import org.asr.studio.ui.speaker.SpeakerScreen
 import org.asr.studio.ui.speaker.SpeakerViewModel
+import org.asr.studio.ui.diagnostics.MicrophoneScreen
 
 private enum class AppScreen(
     val label: String,
@@ -92,8 +94,14 @@ private enum class AppScreen(
     Imu(
         label = "IMU",
         title = "IMU Diagnostics",
-        description = "Sensor graphs and packet views are placeholders until the diagnostics phase.",
+        description = "Accelerometer, Gyroscope, Gravity, Magnetometer, Rotation Vector and Linear Acceleration — live graphs and 3D orientation viewer.",
         icon = Icons.Default.Memory,
+    ),
+    Microphone(
+        label = "Microphone",
+        title = "Microphone Monitor",
+        description = "Live RMS input level, peak hold, noise floor, Voice Activity Detection and waveform history from the robot’s microphone. ROS 2: /asr/audio/level",
+        icon = Icons.Default.Mic,
     ),
     Gps(
         label = "GPS",
@@ -165,6 +173,7 @@ fun App() {
                         inspectorViewModel = inspectorViewModel,
                         cameraViewModel = cameraViewModel,
                         speakerViewModel = speakerViewModel,
+                        studioService = studioService,
                         modifier = Modifier.weight(1f),
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -304,6 +313,7 @@ private fun ScreenContent(
     inspectorViewModel: PacketInspectorViewModel,
     cameraViewModel: CameraViewModel,
     speakerViewModel: SpeakerViewModel,
+    studioService: org.asr.studio.data.StudioService,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -313,12 +323,17 @@ private fun ScreenContent(
         contentAlignment = Alignment.Center,
     ) {
         when (screen) {
+            AppScreen.Dashboard -> org.asr.studio.ui.dashboard.DashboardScreen(
+                sensorRepository = studioService.sensorRepository,
+                cameraRepository = studioService.cameraRepository
+            )
             AppScreen.Devices -> DevicesScreen(devicesViewModel)
             AppScreen.Imu -> DiagnosticsScreen(diagnosticsViewModel)
             AppScreen.Gps -> GpsScreen(diagnosticsViewModel)
             AppScreen.Protocol -> PacketInspectorScreen(inspectorViewModel)
             AppScreen.Camera -> CameraScreen(cameraViewModel)
             AppScreen.Speaker -> SpeakerScreen(speakerViewModel)
+            AppScreen.Microphone -> MicrophoneScreen(studioService.sensorRepository)
             AppScreen.Docs -> DocsScreen()
             else -> PlaceholderContent(screen)
         }
