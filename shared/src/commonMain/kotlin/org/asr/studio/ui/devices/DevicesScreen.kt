@@ -51,7 +51,7 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                         onClick = { viewModel.mode = ConnectMode.WIFI; if (connectionState == ConnectionState.Disconnected) viewModel.host = "" },
                         label = {
                             Text(
-                                if (activeConnectionMode == ConnectMode.WIFI) "📡  Wi-Fi (ACTIVE)" else "📡  Wi-Fi"
+                                if (activeConnectionMode == ConnectMode.WIFI) "Wi-Fi (ACTIVE)" else "Wi-Fi"
                             )
                         },
                         modifier = Modifier.weight(1f)
@@ -61,7 +61,7 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                         onClick = { viewModel.mode = ConnectMode.ADB; if (connectionState == ConnectionState.Disconnected) viewModel.host = "127.0.0.1" },
                         label = {
                             Text(
-                                if (activeConnectionMode == ConnectMode.ADB) "🔌  USB / ADB (ACTIVE)" else "🔌  USB / ADB"
+                                if (activeConnectionMode == ConnectMode.ADB) "USB / ADB (ACTIVE)" else "USB / ADB"
                             )
                         },
                         modifier = Modifier.weight(1f)
@@ -75,7 +75,7 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                             "Click Listen (Server) below."
                         ConnectMode.ADB ->
                             "Run on desktop terminal:  adb reverse tcp:4242 tcp:4242\n" +
-                            "Click Listen (Server) ★ below. On Android, tap CONNECT (host 127.0.0.1)."
+                            "Click Listen (Server) below. On Android, tap CONNECT (host 127.0.0.1)."
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -96,7 +96,7 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "🔒 Currently connected via ${if (activeConnectionMode == ConnectMode.WIFI) "Wi-Fi" else "USB / ADB"}. Click 'Disconnect' below to switch modes.",
+                        text = "Currently connected via ${if (activeConnectionMode == ConnectMode.WIFI) "Wi-Fi" else "USB / ADB"}. Click 'Disconnect' below to switch modes.",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.error
@@ -166,7 +166,7 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                             contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                         )
                     ) {
-                        Text("⚡ Auto-Configure USB / ADB (1-Click Setup)")
+                        Text("Auto-Configure USB / ADB (1-Click Setup)")
                     }
 
                     viewModel.adbStatusMessage?.let { status ->
@@ -208,7 +208,7 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                             containerColor = MaterialTheme.colorScheme.primary
                         )
                     ) {
-                        Text("Listen (Server) ★")
+                        Text("Listen (Server)")
                     }
                 }
 

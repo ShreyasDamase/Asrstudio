@@ -105,12 +105,12 @@ fun MicrophoneScreen(sensorRepository: org.asr.studio.data.SensorRepository) {
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            "🎙️  Microphone Module",
+                            "Microphone Hardware Module",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            if (isMicActive) "● Streaming 16 kHz Audio" else "○ Module Stopped",
+                            if (isMicActive) "Streaming 16 kHz Audio" else "Module Stopped",
                             style = MaterialTheme.typography.bodySmall,
                             color = if (isMicActive) Color(0xFF4ADE80) else MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -145,7 +145,7 @@ fun MicrophoneScreen(sensorRepository: org.asr.studio.data.SensorRepository) {
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
                     ) {
                         Text(
-                            if (isMicActive) "■ Stop Microphone" else "▶ Start Microphone",
+                            if (isMicActive) "Stop Microphone" else "Start Microphone",
                             color = Color.White,
                             fontWeight = FontWeight.Bold
                         )
@@ -161,9 +161,9 @@ fun MicrophoneScreen(sensorRepository: org.asr.studio.data.SensorRepository) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column {
-                        Text("🔊 Live Speaker Monitor", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                        Text("Live Speaker Monitor", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                         Text(
-                            "Audible activity feedback through your MacBook speakers",
+                            "Real-time audio output through desktop speakers",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

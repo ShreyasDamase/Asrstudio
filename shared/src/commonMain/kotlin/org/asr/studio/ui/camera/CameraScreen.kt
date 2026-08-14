@@ -87,7 +87,7 @@ private fun LightingPanel(
         // Flashlight Toggle
         Row(verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("💡 Flashlight", fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
+            Text("Flashlight Torch", fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.weight(1f))
             Switch(
                 checked = flashlightOn,
@@ -113,7 +113,7 @@ private fun LightingPanel(
         // Warning banner
         if (showWarning) {
             Text(
-                "⚠️ Low light — enable flashlight",
+                "Low light detected — enable flashlight",
                 fontSize = 11.sp,
                 color = Color(0xFFFFD166),
                 fontWeight = FontWeight.Bold

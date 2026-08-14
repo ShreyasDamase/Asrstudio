@@ -114,7 +114,7 @@ fun DashboardScreen(
             HealthCard(
                 title = "Battery",
                 value = if (battery != null) "${batteryLevel.toInt()}%" else "--",
-                subtitle = if (battery?.isCharging == true) "⚡ Charging (${"%.1f".format(battery!!.voltage / 1000f)}V)" else "Discharging",
+                subtitle = if (battery?.isCharging == true) "Charging (${"%.1f".format(battery!!.voltage / 1000f)}V)" else "Discharging",
                 valueColor = batteryColor,
                 modifier = Modifier.weight(1f)
             )
@@ -129,7 +129,7 @@ fun DashboardScreen(
             HealthCard(
                 title = "Battery Temp",
                 value = if (battery != null) "${"%.1f".format(tempC)}°C" else "--",
-                subtitle = if (tempC > 42f) "⚠️ Phone Warm — stop unused sensors" else "Optimal thermal status",
+                subtitle = if (tempC > 42f) "High Thermal Load — stop unused modules" else "Optimal thermal range",
                 valueColor = tempColor,
                 modifier = Modifier.weight(1f)
             )
@@ -138,13 +138,8 @@ fun DashboardScreen(
             HealthCard(
                 title = "Ambient Light",
                 value = if (lightSensor != null) "${lightSensor!!.lux.toInt()} lux" else "--",
-                subtitle = when {
-                    lightSensor == null -> "No data"
-                    lightSensor!!.lux < 50f -> "Low Light Environment"
-                    lightSensor!!.lux < 1000f -> "Indoor Lighting"
-                    else -> "Direct Sunlight"
-                },
-                valueColor = Color(0xFF60A5FA),
+                subtitle = if (lightSensor != null && lightSensor!!.lux < 50f) "Low light environment" else "Normal light environment",
+                valueColor = Color(0xFF5EEAD4),
                 modifier = Modifier.weight(1f)
             )
 
@@ -160,8 +155,9 @@ fun DashboardScreen(
 
         // ── Sensor Power & Thermal Management ───────────────────────────────
         Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
-            shape = RoundedCornerShape(10.dp)
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
+            shape = RoundedCornerShape(8.dp)
         ) {
             Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Row(
@@ -182,18 +178,24 @@ fun DashboardScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Button(
                             onClick = { toggleAll(true) },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F766E)),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF059669),
+                                contentColor = Color.White
+                            ),
                             shape = RoundedCornerShape(6.dp)
                         ) {
-                            Text("⚡ ALL ON", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            Text("ALL ON", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
 
                         Button(
                             onClick = { toggleAll(false) },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF991B1B)),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFDC2626),
+                                contentColor = Color.White
+                            ),
                             shape = RoundedCornerShape(6.dp)
                         ) {
-                            Text("🛑 ALL OFF", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            Text("ALL OFF", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
                     }
                 }

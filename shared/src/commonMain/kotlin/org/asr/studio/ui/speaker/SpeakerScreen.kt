@@ -134,21 +134,21 @@ fun SpeakerScreen(viewModel: SpeakerViewModel) {
                         onClick = { viewModel.testVoice() },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("🔊 Voice Test")
+                        Text("Voice Test")
                     }
                     Button(
                         onClick = { viewModel.testWarning() },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                     ) {
-                        Text("⚠️ Warning Test")
+                        Text("Warning Test")
                     }
                     Button(
                         onClick = { viewModel.testSequence() },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                     ) {
-                        Text("🔢 Sequence Test")
+                        Text("Sequence Test")
                     }
                 }
             }
@@ -188,17 +188,14 @@ fun SpeakerScreen(viewModel: SpeakerViewModel) {
                     Column {
                         Text("Speech Mode", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                         Text(
-                            if (naturalMode) "SSML naturalisation active" else "Raw text — robotic output",
+                            if (naturalMode) "SSML naturalisation active" else "Raw text — direct output",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     Switch(
                         checked = naturalMode,
-                        onCheckedChange = { viewModel.setNaturalMode(it) },
-                        thumbContent = {
-                            Text(if (naturalMode) "🗣" else "🤖", fontSize = 10.sp)
-                        }
+                        onCheckedChange = { viewModel.setNaturalMode(it) }
                     )
                 }
 
@@ -213,7 +210,7 @@ fun SpeakerScreen(viewModel: SpeakerViewModel) {
                         )
                     ) {
                         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("✨ Natural Speech Preview", style = MaterialTheme.typography.labelSmall, 
+                            Text("Natural Speech Preview", style = MaterialTheme.typography.labelSmall, 
                                  fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                             Text(
                                 text = ssmlPreview,
@@ -318,9 +315,10 @@ fun SpeakerScreen(viewModel: SpeakerViewModel) {
                     ) {
                         logEvents.forEach { event ->
                             Text(
-                                text = "💬  \"${event.text}\" — ${event.status}",
+                                text = "•  \"${event.text}\" — ${event.status}",
                                 style = MaterialTheme.typography.bodySmall,
-                                fontFamily = FontFamily.Monospace
+                                fontFamily = FontFamily.Monospace,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }

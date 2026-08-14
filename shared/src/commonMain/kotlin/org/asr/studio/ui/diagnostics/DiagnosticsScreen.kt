@@ -266,7 +266,7 @@ private fun ImuOverview(
                     modifier = Modifier.weight(1f),
                     enabled = imu != null
                 ) {
-                    Text("🎯 Set Current as Zero")
+                    Text("Set Current as Zero")
                 }
 
                 OutlinedButton(
@@ -274,7 +274,7 @@ private fun ImuOverview(
                     modifier = Modifier.weight(1f),
                     enabled = refState.state != org.asr.studio.math.ReferenceState.NOT_SET
                 ) {
-                    Text("↺ Reset Reference")
+                    Text("Reset Reference")
                 }
 
                 Button(
@@ -283,7 +283,7 @@ private fun ImuOverview(
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
                     enabled = refState.state != org.asr.studio.math.ReferenceState.NOT_SET
                 ) {
-                    Text("💾 Save Mount Calibration")
+                    Text("Save Mount Calibration")
                 }
             }
 
