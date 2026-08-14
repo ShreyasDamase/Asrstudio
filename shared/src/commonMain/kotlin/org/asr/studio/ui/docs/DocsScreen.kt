@@ -228,62 +228,75 @@ private fun AdbReferenceDoc() {
         Text("Complete ADB Terminal Command Reference", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         Text("Standard ADB CLI commands to control, query, and test the ASR Runtime on Android devices.", style = MaterialTheme.typography.bodyMedium)
 
-        DocCard(title = "1. Runtime Lifecycle Commands", icon = Icons.Default.PowerSettingsNew) {
+        DocCard(title = "1. Runtime Lifecycle & Port Forwarding", icon = Icons.Default.PowerSettingsNew) {
             DocCodeBlock("""
-# Start ASR Service (Foreground)
+# 1. Reverse TCP Port for direct USB streaming (Linux / macOS / Windows)
+adb reverse tcp:4242 tcp:4242
+
+# 2. Start ASR Service (Foreground)
 adb shell "am start-foreground-service -a org.asr.runtime.START org.asr.runtime/org.asr.runtime.core.AsrService"
 
-# Stop ASR Service
+# 3. Stop ASR Service
 adb shell "am start-foreground-service -a org.asr.runtime.STOP org.asr.runtime/org.asr.runtime.core.AsrService"
 
-# Restart ASR Service
+# 4. Restart ASR Service (Full re-initialization)
 adb shell "am start-foreground-service -a org.asr.runtime.RESTART org.asr.runtime/org.asr.runtime.core.AsrService"
+
+# 5. Emergency Reset & Relaunch App
+adb shell "am force-stop org.asr.runtime && am start -n org.asr.runtime/.MainActivity"
             """.trimIndent())
         }
 
-        DocCard(title = "2. Enable Sensor Profiles", icon = Icons.Default.Tune) {
+        DocCard(title = "2. Mission Profiles (Group Activation)", icon = Icons.Default.Tune) {
             DocCodeBlock("""
-# Enable Full Sensor Profile (Camera + IMU + GPS + Audio + Speaker + Battery)
+# Enable Full Sensor Suite (Camera + IMU + GPS + Audio + Speaker + Battery + Environment)
 adb shell "am start-foreground-service -a org.asr.runtime.PROFILE_ENABLE --es profile full_sensor org.asr.runtime/org.asr.runtime.core.AsrService"
 
-# Enable Teleop Profile (Camera + Audio + Speaker)
+# Enable Teleoperation Profile (Camera + Audio + Speaker)
 adb shell "am start-foreground-service -a org.asr.runtime.PROFILE_ENABLE --es profile teleop org.asr.runtime/org.asr.runtime.core.AsrService"
 
-# Enable Mapping Profile (Camera + IMU)
+# Enable Mapping / V-SLAM Profile (Camera + IMU)
 adb shell "am start-foreground-service -a org.asr.runtime.PROFILE_ENABLE --es profile mapping org.asr.runtime/org.asr.runtime.core.AsrService"
+
+# Enable Outdoor Navigation Profile (IMU + GPS + Battery)
+adb shell "am start-foreground-service -a org.asr.runtime.PROFILE_ENABLE --es profile navigation org.asr.runtime/org.asr.runtime.core.AsrService"
             """.trimIndent())
         }
 
         DocCard(title = "3. Individual Sensor Module Control", icon = Icons.Default.ToggleOn) {
             DocCodeBlock("""
-# Start Audio Microphone Module
+# Start Modules (audio, camera, imu, gps, speaker, battery, environment)
 adb shell "am start-foreground-service -a org.asr.runtime.MODULE_START --es module_id audio org.asr.runtime/org.asr.runtime.core.AsrService"
-
-# Stop Audio Microphone Module
-adb shell "am start-foreground-service -a org.asr.runtime.MODULE_STOP --es module_id audio org.asr.runtime/org.asr.runtime.core.AsrService"
-
-# Start Camera Module
 adb shell "am start-foreground-service -a org.asr.runtime.MODULE_START --es module_id camera org.asr.runtime/org.asr.runtime.core.AsrService"
+adb shell "am start-foreground-service -a org.asr.runtime.MODULE_START --es module_id imu org.asr.runtime/org.asr.runtime.core.AsrService"
+
+# Stop Modules
+adb shell "am start-foreground-service -a org.asr.runtime.MODULE_STOP --es module_id audio org.asr.runtime/org.asr.runtime.core.AsrService"
+adb shell "am start-foreground-service -a org.asr.runtime.MODULE_STOP --es module_id camera org.asr.runtime/org.asr.runtime.core.AsrService"
             """.trimIndent())
         }
 
-        DocCard(title = "4. Speaker Text-To-Speech (TTS) Output", icon = Icons.Default.RecordVoiceOver) {
+        DocCard(title = "4. Hardware Parameters (Camera, Flashlight & Speaker)", icon = Icons.Default.Settings) {
             DocCodeBlock("""
-# Trigger Speech Intent
-adb shell "am start-foreground-service -a org.asr.runtime.SPEAK --es text 'ASR speaker test successful' org.asr.runtime/org.asr.runtime.core.AsrService"
+# Configure Camera (Back / Front lens, resolution, fps)
+adb shell "am start-foreground-service -a org.asr.runtime.CAMERA_CONFIG --es lens back --ei width 640 --ei height 480 --ei fps 30 org.asr.runtime/org.asr.runtime.core.AsrService"
 
-# Trigger Obstacle Warning Speech
-adb shell "am start-foreground-service -a org.asr.runtime.SPEAK --es text 'Warning. Obstacle detected.' org.asr.runtime/org.asr.runtime.core.AsrService"
+# Control Flashlight Torch (Turn ON / OFF)
+adb shell "am start-foreground-service -a org.asr.runtime.FLASHLIGHT --ez on true --ef brightness 1.0 org.asr.runtime/org.asr.runtime.core.AsrService"
+adb shell "am start-foreground-service -a org.asr.runtime.FLASHLIGHT --ez on false org.asr.runtime/org.asr.runtime.core.AsrService"
+
+# Trigger Text-To-Speech (TTS) Voice Command
+adb shell "am start-foreground-service -a org.asr.runtime.SPEAK --es text 'Warning. Dynamic obstacle detected.' org.asr.runtime/org.asr.runtime.core.AsrService"
             """.trimIndent())
         }
 
-        DocCard(title = "5. Verification & Logcat Diagnostics", icon = Icons.Default.Analytics) {
+        DocCard(title = "5. Live Diagnostics & Logcat Telemetry", icon = Icons.Default.Analytics) {
             DocCodeBlock("""
-# View Active Modules & Speaker Logs
-adb logcat -d -t 150 | grep -iE "(AsrAudio|AsrCamera|AsrService|Modules)"
+# Query Active Module State Broadcast
+adb shell "am broadcast -a org.asr.runtime.STATUS"
 
-# List Installed Packages
-adb shell "pm list packages | grep asr"
+# Stream High-Speed Telemetry and Frame Benchmark Logs
+adb logcat -s PhoneCamera:V AsrAudio:V AsrService:V AsrTransport:V
             """.trimIndent())
         }
     }
