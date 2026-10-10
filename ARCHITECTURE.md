@@ -1,93 +1,52 @@
 # ASR Studio Architecture
 
-ASR Studio is a Compose Multiplatform Desktop application for diagnostics, visualization, and documentation for the Android Sensor Runtime ecosystem.
+ASR Studio is a Kotlin and Compose Multiplatform desktop application for inspecting telemetry from ASR Android Runtime. It is a TCP diagnostics client; ROS 2 DDS is a separate transport used by the Android runtime and ROS 2 participants.
 
-## Repository Relationship
+## System overview
 
 ```mermaid
 flowchart LR
-    Phone["cameraros\nAndroid Sensor Runtime"] -->|"ASR binary protocol"| Studio["asr-studio\nDesktop diagnostics"]
-    Phone -->|"ASR binary protocol"| Bridge["asr-bridge\nROS 2 bridge"]
+    Phone["ASR Android Runtime"] -->|"ASR binary protocol over TCP"| Studio["ASR Studio"]
+    Phone -->|"ROS 2 DDS over Wi-Fi or USB tether"| ROS["ROS 2 host or robot"]
+    ROS -. "optional USB diagnostics" .-> Helper["ASR ROS 2 USB Link Monitor"]
 ```
 
-- `cameraros` is the Android hardware runtime and protocol authority.
-- `asr-studio` is a desktop diagnostics and visualization tool.
-- ASR Studio must remain binary compatible with `cameraros`.
-- ASR Studio must not require changes to `cameraros`.
+- **ASR Android Runtime** owns the phone sensors, transport controls, and published ROS 2 topics.
+- **ASR Studio** connects to the phone over TCP, directly over Wi-Fi or through ADB reverse port forwarding over USB. Its default port is `4242`.
+- **ROS 2 DDS** is configured independently. Android uses Cyclone DDS; the documented host setup uses `rmw_fastrtps_cpp` and the same `ROS_DOMAIN_ID`.
+- **ASR ROS 2 USB Link Monitor** is an optional host diagnostic for USB-tethered DDS. It is not required for Wi-Fi DDS and is not an ASR Studio dependency.
 
-## Application Layers
+## Application structure
+
+The Gradle project has two modules:
+
+- `shared/` contains Compose UI, screen state/view models, protocol and data code, and shared resources. The current desktop target is JVM.
+- `desktopApp/` contains the desktop entry point, native distribution configuration, and desktop resources such as the phone model.
+
+The main UI is organized under `shared/src/commonMain/kotlin/org/asr/studio/ui/` by feature: camera, dashboard, devices, diagnostics, docs, inspector, speaker, and shared components/theme. `App.kt` owns the desktop navigation shell and the application-level view model instances.
+
+## Data flow
 
 ```mermaid
 flowchart TB
-    UI["Compose UI\nScreens and shell"]
-    VM["ViewModels\nUiState and actions"]
-    Domain["Domain models\nProtocol-compatible data"]
-    Data["Repositories\nRuntime data access"]
-    Net["Networking\nKtor TCP transport"]
-    Android["cameraros\nReference protocol"]
-
-    UI --> VM
-    VM --> Domain
-    VM --> Data
-    Data --> Net
-    Net -. "binary compatibility" .-> Android
+    Phone["ASR Android Runtime"] -->|"TCP packets"| Transport["Studio service / transport"]
+    Transport --> Parser["Protocol decoding"]
+    Parser --> State["Feature view models and state"]
+    State --> UI["Compose diagnostic screens"]
+    UI -->|"TCP commands"| Transport
 ```
 
-## Phase 1 Scope
+TCP packet transport and ROS 2 DDS are distinct. ASR Studio does not bridge DDS, and ADB reverse is only a transport route for the Studio TCP connection. Consult the companion Android Runtime repository when verifying packet semantics, command behavior, or topic definitions.
 
-Phase 1 contains only the application foundation:
+## IMU orientation view
 
-- Compose Desktop entry point
-- Material 3 theme
-- Static app shell
-- Local navigation state
-- Placeholder screens
+The IMU page renders a phone model in a JVM 3D viewport. The model receives the live orientation quaternion from the Android IMU packet and presents world directions, body axes, Euler angles, and camera view presets. View manipulation changes the observer camera; it must not alter sensor-derived device orientation. The viewport implementation is in `shared/src/commonMain/kotlin/org/asr/studio/ui/diagnostics/JmeOrientationViewport.kt`.
 
-Phase 1 intentionally excludes:
+## Documentation and release information
 
-- Networking
-- Packet parsing
-- Serialization
-- Repositories
-- Diagnostics logic
-- Local persistence
-- Android repository changes
+- `README.md` is the entry point for building, connecting, and using the app.
+- The in-app Documentation screen covers setup, TCP connectivity, sensor topics, protocol details, and USB DDS helper scope.
+- `ROADMAP.md` tracks user-facing work and remaining release readiness items.
+- The About screen displays the desktop package version. Keep it aligned with `desktopApp/build.gradle.kts`.
 
-## MVVM Direction
-
-The approved architecture is MVVM:
-
-- UI renders immutable screen state.
-- ViewModels expose state through `StateFlow`.
-- UI sends user actions to ViewModels.
-- Repositories own data access.
-
-Phase 1 may use local Compose state for placeholder navigation because no feature state or data layer exists yet.
-
-## Network Architecture
-
-Networking will be implemented in a later phase after inspecting `cameraros`.
-
-Required compatibility areas include:
-
-- Packet layout
-- Topic IDs
-- Flags
-- CRC implementation
-- Serialization rules
-- Payload parsing
-- Command IDs
-- Transport behavior
-
-If the Android implementation conflicts with the written specification, stop and ask which source is canonical.
-
-## UI Architecture
-
-The desktop shell is organized as:
-
-- Sidebar for primary navigation
-- Title bar for current screen context
-- Content area for the active screen
-- Status bar for connection/build/runtime state placeholders
-
-Screens remain placeholders until their roadmap phase is approved.
+No license is currently included in this repository. Do not describe the project as open source until an appropriate license and third-party notices are added.

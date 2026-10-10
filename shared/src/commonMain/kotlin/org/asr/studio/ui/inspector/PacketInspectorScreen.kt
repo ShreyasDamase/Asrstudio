@@ -3,22 +3,25 @@ package org.asr.studio.ui.inspector
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.asr.studio.data.PacketEntry
 import org.asr.studio.protocol.TopicId
+import org.asr.studio.ui.theme.StudioColors
+import org.asr.studio.ui.theme.StudioTypeSize
+import org.asr.studio.ui.theme.StudioRadii
 
 @Composable
 fun PacketInspectorScreen(viewModel: PacketInspectorViewModel) {
@@ -37,7 +40,7 @@ fun PacketInspectorScreen(viewModel: PacketInspectorViewModel) {
                     text = "Packet History (${packets.size})",
                     style = MaterialTheme.typography.titleSmall
                 )
-                TextButton(onClick = { viewModel.clear() }) {
+                TextButton(onClick = { viewModel.clear() }, shape = StudioRadii.controlShape) {
                     Text("Clear")
                 }
             }
@@ -94,11 +97,11 @@ private fun HeaderRow() {
         modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text("Topic", Modifier.weight(1.2f), fontWeight = FontWeight.Bold, fontSize = 11.sp)
-        Text("Seq", Modifier.weight(0.8f), fontWeight = FontWeight.Bold, fontSize = 11.sp)
-        Text("Size", Modifier.weight(0.8f), fontWeight = FontWeight.Bold, fontSize = 11.sp)
-        Text("Timestamp (ns)", Modifier.weight(1.5f), fontWeight = FontWeight.Bold, fontSize = 11.sp)
-        Text("CRC", Modifier.weight(0.7f), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+        Text("Topic", Modifier.weight(1.2f), fontWeight = FontWeight.Bold, fontSize = StudioTypeSize.caption)
+        Text("Seq", Modifier.weight(0.8f), fontWeight = FontWeight.Bold, fontSize = StudioTypeSize.caption)
+        Text("Size", Modifier.weight(0.8f), fontWeight = FontWeight.Bold, fontSize = StudioTypeSize.caption)
+        Text("Timestamp (ns)", Modifier.weight(1.5f), fontWeight = FontWeight.Bold, fontSize = StudioTypeSize.caption)
+        Text("CRC", Modifier.weight(0.7f), fontWeight = FontWeight.Bold, fontSize = StudioTypeSize.caption)
     }
 }
 
@@ -120,17 +123,17 @@ private fun PacketRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(topic.name, Modifier.weight(1.2f), fontSize = 11.sp)
-        Text(entry.frame.seq.toString(), Modifier.weight(0.8f), fontSize = 11.sp)
-        Text(entry.frame.payloadLength.toString(), Modifier.weight(0.8f), fontSize = 11.sp)
-        Text(entry.frame.timestampNs.toString(), Modifier.weight(1.5f), fontSize = 10.sp, fontFamily = FontFamily.Monospace)
+        Text(topic.name, Modifier.weight(1.2f), fontSize = StudioTypeSize.caption)
+        Text(entry.frame.seq.toString(), Modifier.weight(0.8f), fontSize = StudioTypeSize.caption)
+        Text(entry.frame.payloadLength.toString(), Modifier.weight(0.8f), fontSize = StudioTypeSize.caption)
+        Text(entry.frame.timestampNs.toString(), Modifier.weight(1.5f), fontSize = StudioTypeSize.caption, fontFamily = FontFamily.Monospace)
         
         Text(
             text = if (entry.frame.crcValid) "OK" else "FAIL",
             modifier = Modifier.weight(0.7f),
-            fontSize = 11.sp,
+            fontSize = StudioTypeSize.caption,
             fontWeight = FontWeight.Bold,
-            color = if (entry.frame.crcValid) Color(0xFF4CAF50) else Color(0xFFF44336)
+            color = if (entry.frame.crcValid) StudioColors.success else StudioColors.error
         )
     }
 }
@@ -168,7 +171,7 @@ private fun PacketDetailPanel(entry: PacketEntry?) {
                 text = hexDump(entry.frame.payload),
                 modifier = Modifier.padding(12.dp),
                 fontFamily = FontFamily.Monospace,
-                fontSize = 11.sp,
+                fontSize = StudioTypeSize.caption,
                 lineHeight = 16.sp
             )
         }

@@ -1,54 +1,34 @@
-# Contributing To ASR Studio
+# Contributing to ASR Studio
 
-Read `AGENTS.md` before making changes.
+Thanks for your interest in improving ASR Studio. Before submitting a change, check the current [roadmap](ROADMAP.md) and open an issue or discussion for substantial product or protocol changes.
 
-## Workflow
+## Development setup
 
-1. Work on one roadmap phase at a time.
-2. Keep changes scoped to the approved phase.
-3. Ask for clarification when behavior or architecture is ambiguous.
-4. Run the relevant Gradle build before considering work complete.
-5. Do not modify `/Users/shreyasdamase/Vanguard/cameraros` without explicit approval.
+- JDK 17 or later
+- Git
+- Android Debug Bridge only if validating USB/ADB forwarding
 
-## Build
-
-Run:
+Build and launch from the repository root:
 
 ```bash
-./gradlew build
-```
-
-Run desktop app:
-
-```bash
+./gradlew :desktopApp:assemble
 ./gradlew :desktopApp:run
 ```
 
-## Coding Conventions
+## Change guidelines
 
-- Kotlin code follows standard Kotlin style.
-- Compose UI should use Material 3 components.
-- Keep UI state explicit and easy to inspect.
-- Use MVVM with `StateFlow` when feature view models are introduced.
-- Prefer small, focused files over large mixed-responsibility files.
-- Do not introduce new dependencies without approval or a clear specification requirement.
+- Keep changes focused and preserve unrelated working-tree changes.
+- Follow the existing Kotlin and Compose patterns; keep screen code with its feature.
+- Avoid machine-specific paths, generated build outputs, IDE state, and crash dumps in commits.
+- Keep setup and behavior documentation aligned with the application and companion Android Runtime.
+- Separate ASR Studio TCP behavior from ROS 2 DDS behavior in code and documentation.
+- For protocol changes, verify compatibility against the Android Runtime implementation before changing parser or command behavior.
+- Include build or manual verification details in the pull request. Clearly label checks that were not performed.
 
-## Testing
+## Pull requests
 
-- Add tests for parsing, serialization, state reducers, and other deterministic logic.
-- Protocol tests must be based on the Android reference implementation where possible.
-- UI placeholder-only changes do not require protocol tests.
+Describe the user-visible change, the reason for it, how it was verified, and any known limitations. Include screenshots for material UI changes where possible. Do not include secrets, personal machine paths, or device identifiers in examples.
 
-## Commit Messages
+## License
 
-Use concise, imperative commit messages:
-
-```text
-Add phase one app shell
-Document ASR repository policy
-Implement protocol header parser
-```
-
-## Branch Strategy
-
-Use focused branches by phase or feature. Avoid mixing unrelated documentation, architecture, and implementation changes unless they are part of the approved phase.
+The repository license is not yet established. Until a license is added, contributions and redistribution terms are not defined. Resolve this with the maintainers before publishing a distributable release.

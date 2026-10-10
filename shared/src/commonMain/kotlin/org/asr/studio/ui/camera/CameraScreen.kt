@@ -1,20 +1,26 @@
 package org.asr.studio.ui.camera
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.asr.studio.data.CameraFrameData
 import org.asr.studio.data.LightSensorData
+import org.asr.studio.ui.theme.StudioColors
+import org.asr.studio.ui.theme.StudioSpacing
+import org.asr.studio.ui.theme.StudioTypeSize
+import org.asr.studio.ui.theme.StudioRadii
+import org.asr.studio.ui.components.StudioToggle
 
 @Composable
 fun CameraScreen(viewModel: CameraViewModel) {
@@ -38,7 +44,7 @@ fun CameraScreen(viewModel: CameraViewModel) {
 
         // Lighting Panel — always visible (even while waiting, so user can pre-arm flashlight)
         LightingPanel(
-            modifier = Modifier.align(Alignment.BottomStart).padding(12.dp),
+            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
             lightSensor = lightSensor,
             flashlightOn = flashlightOn,
             brightness = brightness,
@@ -65,58 +71,76 @@ private fun LightingPanel(
 ) {
     val lux = lightSensor?.lux
     val luxLabel = when {
-        lux == null -> "No data"
-        lux < 10f -> "🌑 Very Dark"
-        lux < 50f -> "🌒 Dark"
-        lux < 200f -> "🌓 Dim"
-        lux < 1000f -> "💡 Indoor"
-        lux < 10000f -> "☀️ Daylight"
-        else -> "🌞 Direct Sunlight"
+        lux == null -> "No light data"
+        lux < 10f -> "Very low light"
+        lux < 50f -> "Low light"
+        lux < 200f -> "Dim"
+        lux < 1000f -> "Indoor"
+        lux < 10000f -> "Bright"
+        else -> "Direct sunlight"
     }
     val showWarning = lux != null && lux < 50f && !flashlightOn
 
     Column(
         modifier = modifier
-            .background(Color.Black.copy(alpha = 0.75f))
-            .padding(10.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+            .widthIn(max = 320.dp)
+            .background(StudioColors.panel.copy(alpha = 0.97f), StudioRadii.panelShape)
+            .border(1.dp, StudioColors.borderStrong, StudioRadii.panelShape)
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Text("LIGHTING", fontSize = 10.sp, fontWeight = FontWeight.Bold,
-             color = Color.White.copy(alpha = 0.6f), fontFamily = FontFamily.Monospace)
-
-        // Flashlight Toggle
-        Row(verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Flashlight Torch", fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.weight(1f))
-            Switch(
-                checked = flashlightOn,
-                onCheckedChange = { onToggleFlashlight() },
-                modifier = Modifier.height(24.dp),
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = Color(0xFFFFD166),
-                    checkedTrackColor = Color(0xFFFFD166).copy(alpha = 0.4f)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                "Lighting",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = StudioColors.textPrimary,
+            )
+            if (showWarning) {
+                Text(
+                    "Low light",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = StudioColors.warning,
                 )
-            )
+            }
         }
 
-        // Ambient Light
-        Row(verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Ambient:", fontSize = 11.sp, color = Color.White.copy(alpha = 0.8f))
+        StudioToggle(
+            checked = flashlightOn,
+            onCheckedChange = { onToggleFlashlight() },
+            label = "Flashlight",
+            supportingText = "Phone camera light",
+            modifier = Modifier.padding(horizontal = StudioSpacing.xs),
+        )
+
+        HorizontalDivider(color = StudioColors.border.copy(alpha = 0.8f))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
             Text(
-                text = if (lux != null) "${"%.0f".format(lux)} lux  $luxLabel" else luxLabel,
-                fontSize = 11.sp, color = Color.White, fontFamily = FontFamily.Monospace
+                "Ambient light",
+                style = MaterialTheme.typography.bodySmall,
+                color = StudioColors.textSecondary,
+            )
+            Text(
+                text = if (lux != null) "${"%.0f".format(lux)} lux" else "No data",
+                style = MaterialTheme.typography.bodySmall,
+                color = StudioColors.textPrimary,
+                fontFamily = FontFamily.Monospace,
             )
         }
-
-        // Warning banner
-        if (showWarning) {
+        if (lux != null) {
             Text(
-                "Low light detected — enable flashlight",
-                fontSize = 11.sp,
-                color = Color(0xFFFFD166),
-                fontWeight = FontWeight.Bold
+                luxLabel,
+                style = MaterialTheme.typography.labelSmall,
+                color = StudioColors.textMuted,
             )
         }
     }
@@ -134,10 +158,10 @@ private fun CameraView(frame: CameraFrameData) {
             )
         } else {
             Box(
-                modifier = Modifier.fillMaxSize().background(Color.Black),
+                modifier = Modifier.fillMaxSize().background(StudioColors.canvas),
                 contentAlignment = Alignment.Center
             ) {
-                Text("Decoding error", color = Color.Red)
+                Text("Decoding error", color = StudioColors.error)
             }
         }
 
@@ -146,7 +170,7 @@ private fun CameraView(frame: CameraFrameData) {
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(16.dp)
-                .background(Color.Black.copy(alpha = 0.6f))
+                .background(StudioColors.canvas.copy(alpha = 0.6f))
                 .padding(8.dp)
         ) {
             MetadataText("Resolution", "${frame.width}x${frame.height}")
@@ -163,8 +187,8 @@ private fun CameraView(frame: CameraFrameData) {
 private fun MetadataText(label: String, value: String) {
     Text(
         text = "$label: $value",
-        color = Color.White,
-        fontSize = 12.sp,
+        color = StudioColors.textPrimary,
+        fontSize = StudioTypeSize.supporting,
         fontFamily = FontFamily.Monospace
     )
 }

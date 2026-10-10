@@ -18,12 +18,12 @@ actual fun runAdbReverseAutoSetup(port: Int): String {
         val error = process.errorStream.bufferedReader().readText().trim()
         val exitCode = process.waitFor()
         if (exitCode == 0) {
-            "✅ Auto-configured: adb reverse tcp:$port tcp:$port"
+            "Configured: adb reverse tcp:$port tcp:$port"
         } else {
-            "⚠️ ADB error: ${error.ifBlank { output }}"
+            "ADB error: ${error.ifBlank { output }}"
         }
     } catch (e: Exception) {
-        "⚠️ Could not run adb command: ${e.message}"
+        "Could not run adb command: ${e.message}"
     }
 }
 
@@ -34,9 +34,9 @@ actual fun runAdbShell(vararg args: String): String {
         val process = pb.start()
         val output = process.inputStream.bufferedReader().readText().trim()
         process.waitFor()
-        output.ifBlank { "✅ Command sent" }
+        output.ifBlank { "Command sent" }
     } catch (e: Exception) {
-        "⚠️ ADB error: ${e.message}"
+        "ADB error: ${e.message}"
     }
 }
 
@@ -44,8 +44,7 @@ actual fun loadModelAsset(filename: String): String {
     val candidates = listOf(
         java.io.File(filename),
         java.io.File("shared/src/commonMain/composeResources/files/$filename"),
-        java.io.File("../$filename"),
-        java.io.File("/Users/shreyasdamase/Vanguard/ASR/asrstudio/$filename")
+        java.io.File("../$filename")
     )
     for (f in candidates) {
         if (f.exists()) return f.readText()

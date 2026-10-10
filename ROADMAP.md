@@ -1,71 +1,34 @@
 # ASR Studio Roadmap
 
-Implementation happens one phase at a time. Do not start a later phase until the current phase is complete and approved.
+This roadmap reflects the current desktop application. It is a planning document, not a promise of a release date.
 
-## Phase 1 - Foundation
+## Current capabilities
 
-Status: Complete
+- [x] Compose Multiplatform desktop application shell and feature navigation.
+- [x] ASR TCP connection over Wi-Fi and USB/ADB reverse forwarding.
+- [x] Camera, IMU, GPS, microphone, speaker, dashboard, and packet inspection screens.
+- [x] IMU orientation viewport with live device rotation, compass directions, view presets, and reset controls.
+- [x] In-app getting-started, connectivity, protocol, ROS 2, and sensor documentation.
+- [x] About page with the desktop app version.
 
-- [x] Compose Desktop project
-- [x] Gradle configuration
-- [x] Material 3 theme
-- [x] Project structure
-- [x] Navigation
-- [x] Application shell: sidebar, title bar, status bar
-- [x] Placeholder screens
-- [x] Successful build verification
+## Release readiness
 
-Explicitly out of scope:
+- [ ] Add a repository license selected by the maintainers.
+- [ ] Audit bundled assets and dependencies; include required third-party license and notice files.
+- [ ] Review contribution, issue-reporting, and security-reporting guidance for the public repository.
+- [ ] Confirm maintainer/creator credit and public contact/project links for the About page and README.
+- [ ] Build and inspect native packages on each intended operating system.
+- [ ] Validate TCP setup against the current Android release and document known limitations.
+- [ ] Capture release screenshots and provide concise installation instructions.
 
-- Networking
-- Protocol parsing
-- Repositories
-- Diagnostics
-- Persistence
-- Android project modifications
+## Follow-up product work
 
-## Phase 2 - Protocol Discovery
+- [ ] Review the Logs navigation entry and either implement it or clearly mark its availability in the UI.
+- [ ] Continue checking responsive layout and text hierarchy on smaller desktop windows.
+- [ ] Keep in-app protocol and sensor references synchronized with the Android runtime.
+- [ ] Improve automated coverage for packet decoding and state transformations as the public release workflow is established.
 
-Status: In progress
+## Related projects
 
-- [x] Inspect `cameraros` protocol classes
-- [x] Compare Android implementation with written specification
-- [x] Document packet layout, constants, flags, CRC, command IDs
-- [ ] Ask for clarification on conflicts
-
-Finding: Android `TcpTransport` is a TCP client that connects outward to a configured host and port. The Phase 2 instructions also request an ASR Studio `TcpClient`. This creates a connection-direction conflict that must be clarified before implementing the socket layer.
-
-## Phase 3 - Protocol Models
-
-Status: Not started
-
-- [ ] Implement ASR Studio protocol models
-- [ ] Implement binary-compatible parsing and serialization
-- [ ] Add compatibility tests based on Android behavior
-
-## Phase 4 - Transport Foundation
-
-Status: Not started
-
-- [ ] Implement TCP transport
-- [ ] Define connection state
-- [ ] Add connection UI state
-- [ ] Add transport tests where practical
-
-## Phase 5 - Diagnostics Views
-
-Status: Not started
-
-- [ ] Camera diagnostics
-- [ ] IMU diagnostics
-- [ ] GPS diagnostics
-- [ ] Protocol inspector
-- [ ] Logs
-
-## Phase 6 - Documentation And Packaging
-
-Status: Not started
-
-- [ ] Embedded documentation
-- [ ] Native desktop packaging
-- [ ] Installation verification
+- [ASR Android Runtime](https://github.com/ShreyasDamase/asr-android-runtime) provides the phone runtime and ROS 2 publishers.
+- [ASR ROS 2 USB Link Monitor](https://github.com/ShreyasDamase/asr-ros2-link-monitor) provides optional USB-tether DDS diagnostics.

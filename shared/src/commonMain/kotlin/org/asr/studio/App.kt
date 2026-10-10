@@ -5,47 +5,48 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Router
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Terminal
+import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.unit.sp
 import org.asr.studio.data.StudioService
 import org.asr.studio.ui.camera.CameraScreen
 import org.asr.studio.ui.camera.CameraViewModel
@@ -54,84 +55,100 @@ import org.asr.studio.ui.devices.DevicesViewModel
 import org.asr.studio.ui.diagnostics.DiagnosticsScreen
 import org.asr.studio.ui.diagnostics.DiagnosticsViewModel
 import org.asr.studio.ui.diagnostics.GpsScreen
+import org.asr.studio.ui.diagnostics.MicrophoneScreen
+import org.asr.studio.ui.docs.DocsScreen
 import org.asr.studio.ui.inspector.PacketInspectorScreen
 import org.asr.studio.ui.inspector.PacketInspectorViewModel
-import org.asr.studio.ui.docs.DocsScreen
 import org.asr.studio.ui.speaker.SpeakerScreen
 import org.asr.studio.ui.speaker.SpeakerViewModel
-import org.asr.studio.ui.diagnostics.MicrophoneScreen
+import org.asr.studio.ui.theme.AsrStudioTheme
+import org.asr.studio.ui.theme.StudioColors
+import org.asr.studio.ui.theme.StudioIconSize
+import org.asr.studio.ui.theme.StudioSpacing
 
 private enum class AppScreen(
     val label: String,
     val title: String,
     val description: String,
     val icon: ImageVector,
+    val group: String,
 ) {
     Dashboard(
         label = "Dashboard",
         title = "Dashboard",
-        description = "Runtime overview placeholder. Live status and metrics are planned for a later phase.",
+        description = "Live device health and sensor activity.",
         icon = Icons.Default.Dashboard,
+        group = "WORKSPACE",
     ),
     Devices(
         label = "Devices",
         title = "Device Connection",
-        description = "Connection controls are intentionally not implemented during Phase 1.",
+        description = "Manage the phone connection and runtime controls.",
         icon = Icons.Default.Router,
+        group = "WORKSPACE",
     ),
     Camera(
         label = "Camera",
         title = "Camera Diagnostics",
-        description = "Camera stream diagnostics will be added after protocol compatibility is verified.",
+        description = "Live camera feed and capture details.",
         icon = Icons.Default.PhotoCamera,
+        group = "SENSORS",
     ),
     Speaker(
         label = "Speaker",
         title = "Speaker Diagnostics",
         description = "Test Text-to-Speech (TTS), voice alerts, and speaker hardware telemetry.",
         icon = Icons.Default.VolumeUp,
+        group = "SENSORS",
     ),
     Imu(
         label = "IMU",
         title = "IMU Diagnostics",
-        description = "Accelerometer, Gyroscope, Gravity, Magnetometer, Rotation Vector and Linear Acceleration — live graphs and 3D orientation viewer.",
+        description = "Orientation, inertial readings, and calibration.",
         icon = Icons.Default.Memory,
+        group = "SENSORS",
     ),
     Microphone(
         label = "Microphone",
         title = "Microphone Monitor",
-        description = "Live RMS input level, peak hold, noise floor, Voice Activity Detection and waveform history from the robot’s microphone. ROS 2: /asr/audio/level",
+        description = "Audio level, waveform, and microphone controls.",
         icon = Icons.Default.Mic,
+        group = "SENSORS",
     ),
     Gps(
         label = "GPS",
         title = "GPS Diagnostics",
-        description = "Location fix, speed, bearing, and track diagnostics.",
+        description = "Location fix, motion, and receiver health.",
         icon = Icons.Default.Place,
+        group = "SENSORS",
     ),
     Protocol(
         label = "Protocol",
         title = "Protocol Inspector",
-        description = "Packet parsing waits for inspection of the Android reference implementation.",
+        description = "Inspect packets, sequence numbers, CRC, and payloads.",
         icon = Icons.AutoMirrored.Filled.Article,
+        group = "TOOLS",
     ),
     Logs(
         label = "Logs",
         title = "Logs",
-        description = "Structured runtime logs are not wired during Phase 1.",
+        description = "Log viewer is not available in this build.",
         icon = Icons.Default.Terminal,
+        group = "TOOLS",
     ),
     Docs(
         label = "Docs",
         title = "Documentation",
-        description = "Embedded documentation will be added after the core shell is complete.",
+        description = "Connection guides and sensor references.",
         icon = Icons.Default.Description,
+        group = "HELP",
     ),
-    Settings(
-        label = "Settings",
-        title = "Settings",
-        description = "Preferences and persistence are out of scope for Phase 1.",
-        icon = Icons.Default.Settings,
+    About(
+        label = "About",
+        title = "About ASR Studio",
+        description = "Application details, version, and project links.",
+        icon = Icons.Default.Info,
+        group = "HELP",
     ),
 }
 
@@ -185,51 +202,46 @@ fun App() {
 }
 
 @Composable
-private fun AsrStudioTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = darkColorScheme(
-            primary = Color(0xFF80CBC4),
-            secondary = Color(0xFFFFD166),
-            tertiary = Color(0xFFFF8A80),
-            surface = Color(0xFF111418),
-            surfaceVariant = Color(0xFF1A2027),
-            background = Color(0xFF0B0E11),
-        ),
-        content = content,
-    )
-}
-
-@Composable
 private fun Sidebar(
     selectedScreen: AppScreen,
     onScreenSelected: (AppScreen) -> Unit,
 ) {
     Column(
         modifier = Modifier
-            .width(232.dp)
+            .width(220.dp)
             .fillMaxHeight()
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(16.dp),
+            .background(StudioColors.panel)
+            .padding(horizontal = StudioSpacing.md, vertical = StudioSpacing.lg),
     ) {
         Text(
             text = "ASR Studio",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
         )
         Text(
             text = "Desktop diagnostics",
-            modifier = Modifier.padding(top = 4.dp),
+            modifier = Modifier.padding(start = 1.dp, top = 3.dp),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(StudioSpacing.page))
 
-        AppScreen.entries.forEach { screen ->
-            NavigationItem(
-                screen = screen,
-                selected = screen == selectedScreen,
-                onClick = { onScreenSelected(screen) },
+        listOf("WORKSPACE", "SENSORS", "TOOLS", "HELP").forEach { group ->
+            Text(
+                text = group,
+                modifier = Modifier.padding(start = StudioSpacing.md, top = StudioSpacing.md, bottom = StudioSpacing.sm),
+                style = MaterialTheme.typography.labelSmall,
+                color = StudioColors.textMuted,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 0.8.sp,
             )
+            AppScreen.entries.filter { it.group == group }.forEach { screen ->
+                NavigationItem(
+                    screen = screen,
+                    selected = screen == selectedScreen,
+                    onClick = { onScreenSelected(screen) },
+                )
+            }
         }
     }
 }
@@ -241,26 +253,26 @@ private fun NavigationItem(
     onClick: () -> Unit,
 ) {
     val background =
-        if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f) else Color.Transparent
+        if (selected) StudioColors.accentSurface else Color.Transparent
     val contentColor =
         if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(44.dp)
+            .height(38.dp)
             .background(background, MaterialTheme.shapes.small)
             .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp),
+            .padding(horizontal = StudioSpacing.md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
             imageVector = screen.icon,
             contentDescription = screen.label,
-            modifier = Modifier.size(20.dp),
+            modifier = Modifier.size(StudioIconSize.navigation),
             tint = contentColor,
         )
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(StudioSpacing.md))
         Text(
             text = screen.label,
             color = contentColor,
@@ -280,8 +292,9 @@ private fun TitleBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(72.dp)
-            .padding(horizontal = 24.dp),
+            .height(64.dp)
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(horizontal = StudioSpacing.page),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -292,15 +305,21 @@ private fun TitleBar(
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
-                text = "Phase 2 diagnostics",
+                text = screen.description,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
         Text(
-            text = connectionState.name,
-            style = MaterialTheme.typography.labelLarge,
-            color = if (connectionState == org.asr.studio.protocol.ConnectionState.Connected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
+            text = "TCP · " + when (connectionState) {
+                org.asr.studio.protocol.ConnectionState.Connected -> "Connected"
+                org.asr.studio.protocol.ConnectionState.Connecting -> "Connecting"
+                else -> "Disconnected"
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -335,6 +354,7 @@ private fun ScreenContent(
             AppScreen.Speaker -> SpeakerScreen(speakerViewModel)
             AppScreen.Microphone -> MicrophoneScreen(studioService.sensorRepository)
             AppScreen.Docs -> DocsScreen()
+            AppScreen.About -> org.asr.studio.ui.about.AboutScreen()
             else -> PlaceholderContent(screen)
         }
     }
@@ -342,34 +362,41 @@ private fun ScreenContent(
 
 @Composable
 private fun PlaceholderContent(screen: AppScreen) {
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Surface(
+        modifier = Modifier.padding(28.dp),
+        color = MaterialTheme.colorScheme.surface,
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = 1.dp,
     ) {
-        Icon(
-            imageVector = screen.icon,
-            contentDescription = null,
-            modifier = Modifier.size(48.dp),
-            tint = MaterialTheme.colorScheme.primary,
-        )
-        Spacer(modifier = Modifier.height(20.dp))
-        Text(
-            text = screen.title,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.SemiBold,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = screen.description,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Row(
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = screen.icon,
+                contentDescription = null,
+                modifier = Modifier.size(StudioIconSize.prominent),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = screen.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    text = screen.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
     }
 }
 
 @Composable
 private fun StatusBar(studioService: StudioService) {
-    val connectionState by studioService.tcpClient.connectionState.collectAsState()
     val diag by studioService.packetRepository.diagnostics.collectAsState()
 
     Row(
@@ -381,10 +408,9 @@ private fun StatusBar(studioService: StudioService) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(24.dp),
     ) {
-        StatusItem(label = "Connection", value = connectionState.name)
+        StatusItem(label = "Transport", value = "TCP")
         StatusItem(label = "Packets", value = diag.totalPackets.toString())
-        StatusItem(label = "Drops", value = diag.dropCount.toString())
-        StatusItem(label = "Phase", value = "Diagnostics")
+        StatusItem(label = "Sequence gaps", value = diag.dropCount.toString())
     }
 }
 

@@ -1,18 +1,18 @@
 package org.asr.studio.ui.diagnostics
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,32 +21,34 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.PI
 import kotlin.math.sin
 import org.asr.studio.currentTimeMillis
 import org.asr.studio.data.GpsData
+import org.asr.studio.ui.theme.StudioColors
+import org.asr.studio.ui.theme.StudioTypeSize
 
 @Composable
 fun GpsScreen(viewModel: DiagnosticsViewModel) {
@@ -128,7 +130,7 @@ private fun GpsCard(modifier: Modifier = Modifier, content: @Composable ColumnSc
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
-        shape = RoundedCornerShape(8.dp),
+        shape = MaterialTheme.shapes.medium,
     ) {
         Column(modifier = Modifier.padding(18.dp), content = content)
     }
@@ -137,19 +139,19 @@ private fun GpsCard(modifier: Modifier = Modifier, content: @Composable ColumnSc
 @Composable
 private fun GpsPlot(gps: GpsData?, history: List<GpsData>, modifier: Modifier) {
     val primary = MaterialTheme.colorScheme.primary
-    Canvas(modifier = modifier.background(Color(0xFF0B0E11), RoundedCornerShape(8.dp))) {
+    Canvas(modifier = modifier.background(StudioColors.canvas, MaterialTheme.shapes.medium)) {
         val pad = 26f
         repeat(9) { i ->
             val x = pad + (size.width - pad * 2f) * i / 8f
             val y = pad + (size.height - pad * 2f) * i / 8f
-            drawLine(Color(0xFF1B2230), Offset(x, pad), Offset(x, size.height - pad), 1f)
-            drawLine(Color(0xFF1B2230), Offset(pad, y), Offset(size.width - pad, y), 1f)
+            drawLine(StudioColors.border, Offset(x, pad), Offset(x, size.height - pad), 1f)
+            drawLine(StudioColors.border, Offset(pad, y), Offset(size.width - pad, y), 1f)
         }
-        drawLine(Color(0x5532D6C6), Offset(size.width / 2f, pad), Offset(size.width / 2f, size.height - pad), 1.4f)
-        drawLine(Color(0x5532D6C6), Offset(pad, size.height / 2f), Offset(size.width - pad, size.height / 2f), 1.4f)
+        drawLine(StudioColors.plotCrosshair, Offset(size.width / 2f, pad), Offset(size.width / 2f, size.height - pad), 1.4f)
+        drawLine(StudioColors.plotCrosshair, Offset(pad, size.height / 2f), Offset(size.width - pad, size.height / 2f), 1.4f)
 
         if (gps == null || history.isEmpty()) {
-            drawCircle(Color(0x335EEAD4), 54f, Offset(size.width / 2f, size.height / 2f), style = Stroke(2f))
+            drawCircle(StudioColors.plotHalo, 54f, Offset(size.width / 2f, size.height / 2f), style = Stroke(2f))
             drawCircle(primary, 6f, Offset(size.width / 2f, size.height / 2f))
             return@Canvas
         }
@@ -162,7 +164,7 @@ private fun GpsPlot(gps: GpsData?, history: List<GpsData>, modifier: Modifier) {
                     if (index == 0) moveTo(point.x, point.y) else lineTo(point.x, point.y)
                 }
             }
-            drawPath(path, Color(0xFF60A5FA), style = Stroke(width = 3f, cap = StrokeCap.Round))
+            drawPath(path, StudioColors.axisZ, style = Stroke(width = 3f, cap = StrokeCap.Round))
         }
         points.forEachIndexed { index, point ->
             val alpha = 0.2f + 0.8f * index / max(1, points.lastIndex)
@@ -174,7 +176,7 @@ private fun GpsPlot(gps: GpsData?, history: List<GpsData>, modifier: Modifier) {
         drawCircle(primary.copy(alpha = 0.55f), accuracyPx, latest, style = Stroke(1.5f))
         val bearing = (gps.bearing - 90f) * PI.toFloat() / 180f
         val arrowEnd = Offset(latest.x + cos(bearing) * 42f, latest.y + sin(bearing) * 42f)
-        drawLine(Color(0xFFFFD166), latest, arrowEnd, strokeWidth = 3f, cap = StrokeCap.Round)
+        drawLine(StudioColors.warning, latest, arrowEnd, strokeWidth = 3f, cap = StrokeCap.Round)
     }
 }
 
@@ -194,8 +196,8 @@ private fun CoordinateReadout(gps: GpsData?) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.55f), RoundedCornerShape(8.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.55f), MaterialTheme.shapes.medium)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f), MaterialTheme.shapes.medium)
             .padding(14.dp),
     ) {
         ReadoutRow("Latitude", gps?.let { "%.7f".format(it.lat) } ?: "--")
@@ -207,12 +209,12 @@ private fun CoordinateReadout(gps: GpsData?) {
 private fun MetricTile(label: String, value: String, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.55f), RoundedCornerShape(8.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.55f), MaterialTheme.shapes.medium)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f), MaterialTheme.shapes.medium)
             .padding(14.dp),
     ) {
-        Text(label.uppercase(), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-        Text(value, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+        Text(label.uppercase(), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = StudioTypeSize.caption, fontWeight = FontWeight.Bold)
+        Text(value, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold, fontSize = StudioTypeSize.detailMetric)
     }
 }
 
@@ -222,13 +224,13 @@ private fun BearingCompass(bearing: Float, modifier: Modifier) {
     Canvas(modifier = modifier) {
         val radius = min(size.width, size.height) * 0.42f
         val center = Offset(size.width / 2f, size.height / 2f)
-        drawCircle(Color(0xFF0B0E11), radius, center)
-        drawCircle(Color(0xFF303746), radius, center, style = Stroke(2f))
+        drawCircle(StudioColors.canvas, radius, center)
+        drawCircle(StudioColors.borderStrong, radius, center, style = Stroke(2f))
         repeat(24) { i ->
             val angle = (i * 15f - 90f) * PI.toFloat() / 180f
             val inner = radius - if (i % 6 == 0) 16f else 8f
             drawLine(
-                Color(0xFF4A5362),
+                StudioColors.plotMarker,
                 Offset(center.x + cos(angle) * inner, center.y + sin(angle) * inner),
                 Offset(center.x + cos(angle) * radius, center.y + sin(angle) * radius),
                 2f,
@@ -239,18 +241,18 @@ private fun BearingCompass(bearing: Float, modifier: Modifier) {
         val left = Offset(center.x + cos(angle + 2.55f) * 24f, center.y + sin(angle + 2.55f) * 24f)
         val right = Offset(center.x + cos(angle - 2.55f) * 24f, center.y + sin(angle - 2.55f) * 24f)
         drawPath(Path().apply { moveTo(tip.x, tip.y); lineTo(left.x, left.y); lineTo(center.x, center.y); lineTo(right.x, right.y); close() }, primary)
-        drawCircle(Color(0xFFFFD166), 5f, center)
+        drawCircle(StudioColors.warning, 5f, center)
     }
 }
 
 @Composable
 private fun SpeedStrip(history: List<GpsData>, modifier: Modifier) {
-    Canvas(modifier = modifier.background(Color(0xFF0B0E11), RoundedCornerShape(8.dp)).padding(10.dp)) {
+    Canvas(modifier = modifier.background(StudioColors.canvas, MaterialTheme.shapes.medium).padding(10.dp)) {
         val pad = 18f
         val maxSpeed = max(1f, history.maxOfOrNull { it.speed } ?: 1f)
         repeat(4) { i ->
             val y = pad + (size.height - pad * 2f) * i / 3f
-            drawLine(Color(0xFF222836), Offset(pad, y), Offset(size.width - pad, y), 1f)
+            drawLine(StudioColors.border, Offset(pad, y), Offset(size.width - pad, y), 1f)
         }
         if (history.size < 2) return@Canvas
         val path = Path()
@@ -259,7 +261,7 @@ private fun SpeedStrip(history: List<GpsData>, modifier: Modifier) {
             val y = size.height - pad - (item.speed / maxSpeed) * (size.height - pad * 2f)
             if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
         }
-        drawPath(path, Color(0xFFFFD166), style = Stroke(width = 2.5f, cap = StrokeCap.Round))
+        drawPath(path, StudioColors.warning, style = Stroke(width = 2.5f, cap = StrokeCap.Round))
     }
 }
 
@@ -284,11 +286,11 @@ private fun StatusBadge(text: String) {
     Text(
         text = text,
         color = MaterialTheme.colorScheme.primary,
-        fontSize = 10.sp,
+        fontSize = StudioTypeSize.caption,
         fontWeight = FontWeight.Bold,
         modifier = Modifier
-            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f), RoundedCornerShape(5.dp))
-            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f), RoundedCornerShape(5.dp))
+            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f), MaterialTheme.shapes.medium)
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f), MaterialTheme.shapes.medium)
             .padding(horizontal = 7.dp, vertical = 2.dp),
     )
 }

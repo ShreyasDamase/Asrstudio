@@ -7,20 +7,23 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.asr.studio.ui.theme.StudioColors
+import org.asr.studio.ui.theme.StudioIconSize
+import org.asr.studio.ui.theme.StudioTypeSize
 
 private enum class DocSection(
     val title: String,
@@ -48,13 +51,13 @@ fun DocsScreen() {
         ScrollableTabRow(
             selectedTabIndex = selectedSection.ordinal,
             edgePadding = 0.dp,
-            containerColor = Color(0xFF141923),
-            contentColor = Color(0xFF5EEAD4),
+            containerColor = StudioColors.panelRaised,
+            contentColor = StudioColors.accent,
             indicator = { tabPositions ->
                 if (selectedSection.ordinal < tabPositions.size) {
                     TabRowDefaults.SecondaryIndicator(
                         modifier = Modifier.tabIndicatorOffset(tabPositions[selectedSection.ordinal]),
-                        color = Color(0xFF43D9C5),
+                        color = StudioColors.accent,
                         height = 3.dp
                     )
                 }
@@ -77,14 +80,14 @@ fun DocsScreen() {
                             Icon(
                                 imageVector = section.icon,
                                 contentDescription = section.title,
-                                modifier = Modifier.size(16.dp),
-                                tint = if (selected) Color(0xFF43D9C5) else MaterialTheme.colorScheme.onSurfaceVariant
+                                modifier = Modifier.size(StudioIconSize.small),
+                                tint = if (selected) StudioColors.accent else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
                                 text = section.title,
-                                fontSize = 13.sp,
+                                fontSize = StudioTypeSize.controlLabel,
                                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                color = if (selected) StudioColors.textPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -114,29 +117,26 @@ fun DocsScreen() {
 @Composable
 private fun GettingStartedDoc() {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text("ASR System Architecture & Getting Started", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Text("Android Sensor Runtime (ASR) acts as the low-latency hardware abstraction layer for mobile robotics. ASR Studio is the engineering diagnostics workstation used to monitor telemetry, render live camera frames, inspect binary packets, and issue high-level hardware commands.", style = MaterialTheme.typography.bodyMedium)
+        Text("Getting Started with ASR", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Text("ASR Android Runtime runs the phone sensors and publishes ROS 2 data. ASR Studio is a separate desktop application for TCP telemetry and diagnostics. ROS 2 DDS and Studio TCP have independent controls.", style = MaterialTheme.typography.bodyMedium)
 
         DocCard(title = "System Component Overview", icon = Icons.Default.Layers) {
-            DocBullet("Android Sensor Runtime (cameraros)", "Runs on mobile Android device. Captures raw CameraX frames, IMU (Accel, Gyro, Quaternion, Magnetometer), GPS, Battery, Audio Mic, and Speaker TTS.")
-            DocBullet("ASR Studio (asrstudio)", "Desktop engineering workstation built with Compose Multiplatform. Renders live camera feed, 3D CAD IMU viewport, live PCM audio speaker monitor, and auto-configures USB ADB bridges.")
-            DocBullet("Binary Protocol (ASR-TCP)", "Standardized IEEE 802.3 CRC32-validated binary protocol running over TCP port 4242.")
+            DocBullet("ASR Android Runtime", "Runs phone sensor modules and exposes ROS 2 DDS and optional TCP connections.")
+            DocBullet("ASR Studio", "Desktop diagnostics client for camera, IMU, audio, GPS, device state, and ASR packet inspection.")
+            DocBullet("ROS 2 USB Link Monitor", "Optional persistent ROS 2 host node for USB-tether link and sensor-flow diagnostics. Wi-Fi DDS does not require this helper.")
         }
 
-        DocCard(title = "Quickstart Workflow", icon = Icons.Default.PlayArrow) {
+        DocCard(title = "First Connection", icon = Icons.Default.PlayArrow) {
             DocCodeBlock("""
-# 1. Build and install ASR Runtime on Android device
-./gradlew :app:installDebug
+# 1. On Android: open ASR Runtime, grant needed permissions, and start Runtime.
+# 2. For the desktop app: use the TCP section in ASR Runtime and ASR Studio -> Devices.
+# 3. For ROS 2: enable Wi-Fi DDS or USB DDS separately in the phone app.
+# 4. For USB DDS diagnostics, use the separate asr_ros2 USB monitor.
 
-# 2. Launch ASR Studio Desktop App
-./gradlew :desktopApp:run
-
-# 3. Connect via USB ADB (Recommended)
-adb reverse tcp:4242 tcp:4242
-
-# 4. In ASR Studio -> Devices -> Click "Listen (Server)"
-# 5. On Android Phone -> Tap START -> Tap CONNECT
+ROS_DOMAIN_ID=0
+RMW_IMPLEMENTATION=rmw_fastrtps_cpp
             """.trimIndent())
+            Text("The ROS environment lines apply to the ROS 2 host. Android uses Cyclone DDS. Keep the domain ID consistent on both participants.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -145,31 +145,27 @@ adb reverse tcp:4242 tcp:4242
 @Composable
 private fun ConnectivityDoc() {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text("Connectivity: Wi-Fi vs. USB / ADB Mode", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Text("ASR supports dual transport layers: Local Wi-Fi (wireless mobility) and USB / ADB (zero-latency physical cable connection).", style = MaterialTheme.typography.bodyMedium)
+        Text("Connectivity: TCP and ROS 2 DDS", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Text("TCP connects the phone to ASR Studio. ROS 2 DDS connects the phone to ROS 2 participants. They are independent paths; enabling one does not enable the other.", style = MaterialTheme.typography.bodyMedium)
 
-        DocCard(title = "Wi-Fi Mode (LAN)", icon = Icons.Default.Wifi) {
-            DocBullet("Network", "Ensure Desktop and Android phone are connected to the same Wi-Fi network subnet.")
-            DocBullet("Server Listener", "In ASR Studio -> Select 'Wi-Fi' tab -> Click 'Listen (Server)'.")
-            DocBullet("Android Connection", "On Android phone -> Enter Desktop IP (e.g. 192.168.1.42) -> Tap CONNECT.")
+        DocCard(title = "Wi-Fi TCP to ASR Studio", icon = Icons.Default.Wifi) {
+            DocBullet("Network", "Connect the desktop and phone to a network that allows them to reach each other.")
+            DocBullet("ASR Studio", "Open Devices, select Wi-Fi, enter the desktop's local IP, then choose Listen (Server).")
+            DocBullet("Android", "Enable TCP and connect to the desktop IP on port 4242.")
         }
 
-        DocCard(title = "USB / ADB Mode (Reverse TCP Forwarding)", icon = Icons.Default.Cable) {
-            Text("adb reverse tcp:4242 tcp:4242 forwards connections originating from Android phone (127.0.0.1:4242) over USB cable directly to ASR Studio listening on port 4242.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(4.dp))
-            DocCodeBlock("""
-# Command to configure ADB Reverse:
-adb reverse tcp:4242 tcp:4242
-
-# Clear stale or conflicting rules if necessary:
-adb forward --remove-all
-adb reverse --remove-all
-adb reverse tcp:4242 tcp:4242
-            """.trimIndent())
+        DocCard(title = "USB / ADB TCP to ASR Studio", icon = Icons.Default.Cable) {
+            DocBullet("Prepare", "Connect the phone, authorize USB debugging, and keep the device visible in adb devices.")
+            DocBullet("Configure", "In ASR Studio -> Devices -> USB / ADB, click Auto-Configure USB / ADB (1-Click Setup). It applies adb reverse for port 4242.")
+            DocBullet("Connect", "Choose Listen (Server) in Studio, then enable TCP in Android with host 127.0.0.1 and port 4242.")
+            DocBullet("Scope", "ADB forwarding is only the Studio TCP path. It does not enable ROS 2 DDS or USB tethering.")
         }
 
-        DocCard(title = "1-Click Auto Setup in ASR Studio", icon = Icons.Default.FlashOn) {
-            Text("In ASR Studio, open Devices -> USB / ADB tab -> Click 'Auto-Configure USB / ADB (1-Click Setup)'. ASR Studio automatically clears stale rules and configures adb reverse in the background.")
+        DocCard(title = "ROS 2 DDS over USB tethering", icon = Icons.Default.Hub) {
+            DocBullet("Phone", "Connect USB, enable USB tethering in Android system settings, start Runtime, and enable USB DDS in the app.")
+            DocBullet("Host", "Use a sourced ROS 2 environment with rmw_fastrtps_cpp and the same ROS_DOMAIN_ID (default 0).")
+            DocBullet("Monitor", "Run ros2 launch asr_ros2 connect.launch.py transport:=usb. Add interface:=<name> if interface selection is ambiguous.")
+            DocBullet("Wi-Fi DDS", "No ASR helper is needed. Enable Wi-Fi DDS and use a normal ROS 2 subscriber or persistent robot node.")
         }
     }
 }
@@ -282,7 +278,7 @@ adb shell "am start-foreground-service -a org.asr.runtime.MODULE_STOP --es modul
 adb shell "am start-foreground-service -a org.asr.runtime.CAMERA_CONFIG --es lens back --ei width 640 --ei height 480 --ei fps 30 org.asr.runtime/org.asr.runtime.core.AsrService"
 
 # Control Flashlight Torch (Turn ON / OFF)
-adb shell "am start-foreground-service -a org.asr.runtime.FLASHLIGHT --ez on true --ef brightness 1.0 org.asr.runtime/org.asr.runtime.core.AsrService"
+adb shell "am start-foreground-service -a org.asr.runtime.FLASHLIGHT --ez on true org.asr.runtime/org.asr.runtime.core.AsrService"
 adb shell "am start-foreground-service -a org.asr.runtime.FLASHLIGHT --ez on false org.asr.runtime/org.asr.runtime.core.AsrService"
 
 # Trigger Text-To-Speech (TTS) Voice Command
@@ -306,36 +302,48 @@ adb logcat -s PhoneCamera:V AsrAudio:V AsrService:V AsrTransport:V
 @Composable
 private fun Ros2IntegrationDoc() {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text("ROS 2 Integration & Binary Protocol Specification", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Text("ROS 2 DDS Integration", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+
+        DocCard(title = "DDS setup", icon = Icons.Default.Hub) {
+            DocBullet("Android middleware", "ASR Android Runtime uses Cyclone DDS.")
+            DocBullet("Host middleware", "The validated host setup uses rmw_fastrtps_cpp. It interoperates with the Android Cyclone DDS participant.")
+            DocBullet("Domain", "Set the same ROS_DOMAIN_ID on the phone and host. The default is 0.")
+            DocBullet("Wi-Fi", "Enable Wi-Fi DDS in the phone app and use a normal ROS 2 node or subscriber. The ASR USB helper is not used for Wi-Fi.")
+            DocBullet("USB", "Enable Android USB tethering and USB DDS, then run the asr_ros2 USB link monitor on the host if you need persistent diagnostics.")
+        }
 
         DocCard(title = "Binary Frame Layout (28-Byte Header)", icon = Icons.Default.DataObject) {
             DocCodeBlock("""
-Offset  Type     Field          Description
-0-1     UInt8[2] Magic          'A', 'S' (0x41, 0x53)
-2       UInt8    Version        Protocol Version (0x01)
-3       UInt8    TopicId        0x01=Camera, 0x02=IMU, 0x03=GPS, 0x05=Audio, 0x08=Command
-4       UInt8    Flags          Compression / Encryption flags
-5       UInt8    DeviceId       Hardware Device Identifier
-6-13    UInt64   TimestampNs    Hardware Sensor Timestamp (ns)
-14-17   UInt32   Seq            Monotonically increasing sequence number
-18-21   UInt32   PayloadLength  Size of payload in bytes
-22-25   UInt32   StoredCrc      IEEE 802.3 CRC32 of payload
-26-27   UInt16   Reserved       Alignment padding
-28..             Payload        Tightly packed payload bytes
+Offset  Bytes  Field          Description
+0-1     2      Magic          A5 AA
+2       1      Version        Protocol version
+3       1      Topic ID       ASR packet topic identifier
+4       1      Flags          Packet flags
+5       1      Device ID      Device identifier
+6-7     2      Reserved       Little-endian reserved field
+8-15    8      Timestamp      Nanoseconds, little-endian
+16-19   4      Sequence       Little-endian sequence number
+20-23   4      Payload length Little-endian byte count
+24-27   4      CRC32          IEEE CRC32 over header bytes 0-23 and payload
+28..    n      Payload        Topic-specific payload
             """.trimIndent())
         }
 
-        DocCard(title = "ROS 2 Node Topic Mapping", icon = Icons.Default.Hub) {
-            DocBullet("/asr/camera/compressed", "sensor_msgs/msg/CompressedImage (JPEG)")
-            DocBullet("/asr/imu/data", "sensor_msgs/msg/Imu (Accel + Gyro + Quaternion)")
-            DocBullet("/asr/gps/fix", "sensor_msgs/msg/NavSatFix")
-            DocBullet("/asr/speaker/goal", "std_msgs/msg/String (TTS Speech Command)")
-            DocBullet("/asr/audio/level", "asr_msgs/msg/AudioLevel (Telemetry)")
-            DocBullet("/asr/audio/raw", "audio_common_msgs/msg/AudioData or std_msgs/msg/Int16MultiArray")
-            DocBullet("/asr/flashlight/cmd", "asr_msgs/msg/FlashlightCmd")
-            DocBullet("/asr/flashlight/state", "asr_msgs/msg/FlashlightState")
-            DocBullet("/asr/light_sensor/lux", "sensor_msgs/msg/Illuminance")
-            DocBullet("/asr/battery/state", "sensor_msgs/msg/BatteryState")
+        DocCard(title = "Topic namespace", icon = Icons.Default.AccountTree) {
+            Text("Topics are published below /asr_android_<device-id>. For example, phone 168 publishes IMU on /asr_android_168/imu. Exact message availability depends on the device, permission, and module state.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            DocBullet("imu", "sensor_msgs/msg/Imu")
+            DocBullet("camera/image/compressed", "sensor_msgs/msg/CompressedImage")
+            DocBullet("camera/camera_info", "sensor_msgs/msg/CameraInfo")
+            DocBullet("gps", "sensor_msgs/msg/NavSatFix")
+            DocBullet("battery", "sensor_msgs/msg/BatteryState")
+            DocBullet("environment/illuminance", "sensor_msgs/msg/Illuminance")
+            DocBullet("audio/raw", "std_msgs/msg/Int16MultiArray")
+            DocBullet("speaker/speech", "std_msgs/msg/String command")
+            DocBullet("flashlight", "std_msgs/msg/String command")
+        }
+
+        DocCard(title = "USB monitor scope", icon = Icons.Default.Cable) {
+            Text("The companion asr_ros2 helper is a USB-tether link and sensor-flow monitor. It checks the ROS graph and actual callbacks separately for IMU, compressed images, battery, and runtime status. It is optional for DDS and is not the Wi-Fi connection path.", style = MaterialTheme.typography.bodySmall)
         }
     }
 }
@@ -344,118 +352,45 @@ Offset  Type     Field          Description
 @Composable
 private fun SensorCatalogDoc() {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text("Android Sensor Catalog — ROS 2 Topic Reference",
-             style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Text(
-            "Every sensor listed below is available on a standard Android smartphone. " +
-            "ASR exposes each as a typed ROS 2 topic — no additional hardware purchase required. " +
-            "Connect your phone via USB or Wi-Fi to unlock a complete robotics sensor suite.",
-            style = MaterialTheme.typography.bodyMedium
-        )
+        Text("ROS 2 Sensor Topics", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Text("Topic names use the device namespace /asr_android_<device-id>. Availability depends on the phone's hardware, Android permissions, and which runtime modules are enabled. Rates may vary by device.", style = MaterialTheme.typography.bodyMedium)
 
-        DocCard(title = "Camera — /asr/camera/compressed", icon = Icons.Default.PhotoCamera) {
-            DocBullet("ROS 2 msg", "sensor_msgs/msg/CompressedImage (JPEG)")
-            DocBullet("Resolution", "640×480 to 1280×720, JPEG quality 75")
-            DocBullet("Rate", "30 FPS")
-            DocBullet("Topic ID", "0x01 (CAMERA_FRAME)")
+        DocCard(title = "Find the phone topics", icon = Icons.Default.Search) {
             DocCodeBlock("""
-ros2 topic echo /asr/camera/compressed --no-arr
-# or view with rqt:
-ros2 run rqt_image_view rqt_image_view
+ros2 topic list | grep '^/asr_android_'
+ros2 topic echo /asr_android_168/imu
+ros2 topic echo /asr_android_168/camera/image/compressed
             """.trimIndent())
+            Text("Replace 168 with the device ID shown by the namespace on your ROS 2 graph.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
-        DocCard(title = "IMU (Accel + Gyro + Rotation) — /asr/imu/data", icon = Icons.Default.Explore) {
-            DocBullet("ROS 2 msg", "sensor_msgs/msg/Imu")
-            DocBullet("Quaternion", "Full [w, x, y, z] at 100 Hz from Android Rotation Vector sensor")
-            DocBullet("Accel", "m/s² linear acceleration (gravity removed)")
-            DocBullet("Gyro", "rad/s angular velocity")
-            DocBullet("Topic ID", "0x02 (IMU)")
-            DocCodeBlock("""
-import rclpy
-from sensor_msgs.msg import Imu
-
-def imu_callback(msg):
-    q = msg.orientation
-    print(f'Quaternion: w={q.w:.3f} x={q.x:.3f} y={q.y:.3f} z={q.z:.3f}')
-    print(f'Gyro: {msg.angular_velocity.x:.3f} rad/s')
-
-node.create_subscription(Imu, '/asr/imu/data', imu_callback, 10)
-            """.trimIndent())
+        DocCard(title = "Motion and camera", icon = Icons.Default.Explore) {
+            DocBullet("/imu", "sensor_msgs/msg/Imu — fused orientation, angular velocity, and acceleration fields")
+            DocBullet("/camera/image/compressed", "sensor_msgs/msg/CompressedImage — compressed camera frames")
+            DocBullet("/camera/camera_info", "sensor_msgs/msg/CameraInfo — calibration and image dimensions")
+            DocBullet("/motion/steps", "std_msgs/msg/UInt32 — available on devices with a step counter")
         }
 
-        DocCard(title = "Magnetometer — /asr/imu/magnetic_field", icon = Icons.Default.Navigation) {
-            DocBullet("ROS 2 msg", "sensor_msgs/msg/MagneticField")
-            DocBullet("Unit", "microtesla (μT), typically 25–65 μT (Earth's field)")
-            DocBullet("Rate", "50 Hz")
-            DocBullet("Note", "Fused with accelerometer for stable yaw. Avoid placing near motors/magnets.")
+        DocCard(title = "Location, battery, and environment", icon = Icons.Default.Sensors) {
+            DocBullet("/gps", "sensor_msgs/msg/NavSatFix — location when permission and a fix are available")
+            DocBullet("/battery", "sensor_msgs/msg/BatteryState — event-driven state updates")
+            DocBullet("/environment/illuminance", "sensor_msgs/msg/Illuminance, when supported")
+            DocBullet("/environment/pressure", "sensor_msgs/msg/FluidPressure, when supported")
+            DocBullet("/environment/temperature", "sensor_msgs/msg/Temperature, when supported")
+            DocBullet("/environment/relative_humidity", "sensor_msgs/msg/RelativeHumidity, when supported")
         }
 
-        DocCard(title = "GPS — /asr/gps/fix", icon = Icons.Default.Place) {
-            DocBullet("ROS 2 msg", "sensor_msgs/msg/NavSatFix")
-            DocBullet("Fields", "Latitude, Longitude, Altitude (m ASL), Accuracy (m), Bearing, Speed (m/s)")
-            DocBullet("Rate", "1 Hz (GPS hardware limited)")
-            DocBullet("Topic ID", "0x03 (GPS)")
+        DocCard(title = "Audio and device commands", icon = Icons.Default.Mic) {
+            DocBullet("/audio/raw", "std_msgs/msg/Int16MultiArray — microphone samples when audio capture is enabled")
+            DocBullet("/speaker/speech", "std_msgs/msg/String — inbound text-to-speech command")
+            DocBullet("/flashlight", "std_msgs/msg/String — inbound flashlight command")
+            DocBullet("/status", "std_msgs/msg/String — runtime heartbeat")
+            DocBullet("/capabilities", "std_msgs/msg/String — device capability information")
+            DocBullet("/test/in", "std_msgs/msg/String — inbound test/control topic")
         }
 
-        DocCard(title = "Speaker / TTS — /asr/speaker/say", icon = Icons.Default.VolumeUp) {
-            DocBullet("ROS 2 msg", "std_msgs/msg/String (plain text or SSML)")
-            DocBullet("Engine", "Android TextToSpeech — supports SSML markup for natural speech")
-            DocBullet("SSML", "Send <speak><prosody rate='95%'>...</prosody></speak> for human-sounding output")
-            DocBullet("Topic ID", "0x08 (COMMAND)")
-            DocCodeBlock("""
-# Publish speech command from ROS 2
-ros2 topic pub /asr/speaker/say std_msgs/msg/String "{data: 'Warning, obstacle detected'}"
-            """.trimIndent())
-        }
-
-        DocCard(title = "Microphone Level — /asr/audio/level & /asr/audio/raw", icon = Icons.Default.Mic) {
-            DocBullet("ROS 2 msg", "asr_msgs/msg/AudioLevel (custom) & audio_common_msgs/msg/AudioData")
-            DocBullet("Fields", "rms_level (0–1), peak_level (0–1), noise_floor_dbfs, voice_active (bool), sample_rate_hz")
-            DocBullet("Rate", "~20 Hz telemetry + live 16 kHz PCM stream")
-            DocBullet("Topic ID", "0x05 (AUDIO) & 0x10 (AUDIO_RAW)")
-            DocBullet("Use case", "Speech recognition pipeline: subscribe /asr/audio/raw → feed to Whisper/Vosk")
-        }
-
-        DocCard(title = "Flashlight — /asr/flashlight/cmd & /asr/flashlight/state", icon = Icons.Default.FlashlightOn) {
-            DocBullet("Command msg", "asr_msgs/msg/FlashlightCmd — fields: on (bool), brightness (float32, 0–1)")
-            DocBullet("State msg", "asr_msgs/msg/FlashlightState — current on/brightness reported by phone")
-            DocBullet("Topic ID", "0x0E (FLASHLIGHT)")
-            DocBullet("Use case", "Dark environment navigation — trigger when ambient lux < 50")
-            DocCodeBlock("""
-# Toggle flashlight on from ROS 2
-ros2 topic pub /asr/flashlight/cmd asr_msgs/msg/FlashlightCmd "{on: true, brightness: 1.0}"
-            """.trimIndent())
-        }
-
-        DocCard(title = "Ambient Light Sensor — /asr/light_sensor/lux", icon = Icons.Default.LightMode) {
-            DocBullet("ROS 2 msg", "sensor_msgs/msg/Illuminance")
-            DocBullet("Unit", "lux (< 10=very dark, 10–50=dark, 200–1000=indoor, 1000–10000=daylight)")
-            DocBullet("Topic ID", "0x0F (LIGHT_SENSOR)")
-            DocBullet("Use case", "Auto-trigger flashlight when entering dark spaces")
-        }
-
-        DocCard(title = "Battery — /asr/battery/state", icon = Icons.Default.BatteryChargingFull) {
-            DocBullet("ROS 2 msg", "sensor_msgs/msg/BatteryState")
-            DocBullet("Fields", "Level (0–1), Temperature (°C), Voltage (V), IsCharging (bool)")
-            DocBullet("Topic ID", "0x04 (BATTERY)")
-        }
-
-        DocCard(title = "Why Use Android Instead of Dedicated Hardware?", icon = Icons.Default.Smartphone) {
-            Text(
-                "• A standard Android phone includes: 6-axis IMU, GPS, magnetometer, high-resolution camera, " +
-                "microphone, ambient light sensor, barometer, proximity sensor, and speaker — all in one integrated package.",
-                style = MaterialTheme.typography.bodySmall
-            )
-            Text(
-                "• Dedicated robotics sensors (LIDAR, stereo cameras, industrial IMUs) cost \$500–\$5000 each.",
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                "• ASR makes robotics accessible to students, hobbyists, and researchers worldwide " +
-                "by treating the smartphone as a first-class robotics hardware abstraction suite.",
-                style = MaterialTheme.typography.bodySmall
-            )
+        DocCard(title = "USB monitor coverage", icon = Icons.Default.Cable) {
+            Text("The companion USB Link Monitor currently reports graph and message flow for IMU, compressed camera frames, battery, and runtime status. Use ROS 2 tools or your application node to inspect the other topics.", style = MaterialTheme.typography.bodySmall)
         }
     }
 }
@@ -470,10 +405,10 @@ private fun DocCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF141923)
+            containerColor = StudioColors.panelRaised
         ),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF222B3D)),
-        shape = RoundedCornerShape(8.dp)
+        border = androidx.compose.foundation.BorderStroke(1.dp, StudioColors.border),
+        shape = MaterialTheme.shapes.medium
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -487,18 +422,18 @@ private fun DocCard(
                     Icon(
                         imageVector = icon,
                         contentDescription = title,
-                        modifier = Modifier.size(18.dp),
-                        tint = Color(0xFF43D9C5)
+                        modifier = Modifier.size(StudioIconSize.navigation),
+                        tint = StudioColors.accent
                     )
                 }
                 Text(
                     title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFFECEFF4)
+                    color = StudioColors.textPrimary
                 )
             }
-            HorizontalDivider(color = Color(0xFF222B3D))
+            HorizontalDivider(color = StudioColors.border)
             content()
         }
     }
@@ -507,10 +442,10 @@ private fun DocCard(
 @Composable
 private fun DocBullet(label: String, text: String) {
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text("•", fontWeight = FontWeight.Bold, color = Color(0xFF43D9C5))
-        Text(label, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFE5E9F0))
-        Text("—", color = Color(0xFF8892B0), fontSize = 13.sp)
-        Text(text, fontSize = 13.sp, color = Color(0xFFCBD5E1))
+        Text("•", fontWeight = FontWeight.Bold, color = StudioColors.accent)
+        Text(label, fontWeight = FontWeight.Bold, fontSize = StudioTypeSize.controlLabel, color = StudioColors.textPrimary)
+        Text("—", color = StudioColors.textSecondary, fontSize = StudioTypeSize.controlLabel)
+        Text(text, fontSize = StudioTypeSize.controlLabel, color = StudioColors.textSecondary)
     }
 }
 
@@ -519,16 +454,16 @@ private fun DocCodeBlock(code: String) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, Color(0xFF222B3D), RoundedCornerShape(6.dp)),
-        color = Color(0xFF0B0E14),
-        shape = RoundedCornerShape(6.dp)
+            .border(1.dp, StudioColors.border, MaterialTheme.shapes.medium),
+        color = StudioColors.panelInset,
+        shape = MaterialTheme.shapes.medium
     ) {
         Text(
             text = code,
             fontFamily = FontFamily.Monospace,
-            fontSize = 12.sp,
+            fontSize = StudioTypeSize.supporting,
             modifier = Modifier.padding(14.dp),
-            color = Color(0xFF5EEAD4)
+            color = StudioColors.accent
         )
     }
 }

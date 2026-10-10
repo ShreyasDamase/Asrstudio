@@ -1,24 +1,24 @@
 package org.asr.studio.ui.diagnostics
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -28,41 +28,41 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.acos
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.PI
 import kotlin.math.sin
 import kotlin.math.sqrt
 import org.asr.studio.currentTimeMillis
 import org.asr.studio.data.Diagnostics
 import org.asr.studio.data.ImuData
-import org.joml.Matrix3f
-import org.joml.Quaternionf
-import org.joml.Vector3f
+import org.asr.studio.ui.theme.StudioColors
+import org.asr.studio.ui.theme.StudioRadii
+import org.asr.studio.ui.theme.StudioTypeSize
 
 private enum class ImuTab(val label: String) {
     Overview("Overview"),
@@ -70,7 +70,7 @@ private enum class ImuTab(val label: String) {
     Gyroscope("Gyroscope"),
     Gravity("Gravity"),
     Rotation("Rotation Vector"),
-    LinearAcceleration("Linear Accel."),
+    LinearAcceleration("Linear Acceleration"),
     Magnetometer("Magnetometer"),
 }
 
@@ -206,10 +206,7 @@ private fun ImuOverview(
     history: List<ImuData>
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             SensorChip("Accelerometer", "400 Hz", imu != null, Modifier.weight(1f))
             SensorChip("Gyroscope", "400 Hz", imu != null, Modifier.weight(1f))
             SensorChip("Gravity", "200 Hz", imu != null, Modifier.weight(1f))
@@ -232,7 +229,7 @@ private fun ImuOverview(
                 Surface(
                     color = when (refState.state) {
                         org.asr.studio.math.ReferenceState.NOT_SET -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
-                        org.asr.studio.math.ReferenceState.SESSION_SET -> Color(0xFF38A169).copy(alpha = 0.15f)
+                        org.asr.studio.math.ReferenceState.SESSION_SET -> StudioColors.success.copy(alpha = 0.15f)
                         org.asr.studio.math.ReferenceState.SAVED -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                     },
                     shape = MaterialTheme.shapes.small
@@ -240,16 +237,16 @@ private fun ImuOverview(
                     Text(
                         text = when (refState.state) {
                             org.asr.studio.math.ReferenceState.NOT_SET -> "Reference: Not Set"
-                            org.asr.studio.math.ReferenceState.SESSION_SET -> "Reference: Session Active ★"
+                            org.asr.studio.math.ReferenceState.SESSION_SET -> "Reference: Session Active"
                             org.asr.studio.math.ReferenceState.SAVED -> "Reference: Saved Mount Calibrated"
                         },
                         color = when (refState.state) {
                             org.asr.studio.math.ReferenceState.NOT_SET -> MaterialTheme.colorScheme.secondary
-                            org.asr.studio.math.ReferenceState.SESSION_SET -> Color(0xFF38A169)
+                            org.asr.studio.math.ReferenceState.SESSION_SET -> StudioColors.success
                             org.asr.studio.math.ReferenceState.SAVED -> MaterialTheme.colorScheme.primary
                         },
                         fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp,
+                        fontSize = StudioTypeSize.supporting,
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                     )
                 }
@@ -264,7 +261,8 @@ private fun ImuOverview(
                 Button(
                     onClick = { viewModel.setZero() },
                     modifier = Modifier.weight(1f),
-                    enabled = imu != null
+                    enabled = imu != null,
+                    shape = StudioRadii.controlShape,
                 ) {
                     Text("Set Current as Zero")
                 }
@@ -272,7 +270,8 @@ private fun ImuOverview(
                 OutlinedButton(
                     onClick = { viewModel.resetReference() },
                     modifier = Modifier.weight(1f),
-                    enabled = refState.state != org.asr.studio.math.ReferenceState.NOT_SET
+                    enabled = refState.state != org.asr.studio.math.ReferenceState.NOT_SET,
+                    shape = StudioRadii.controlShape,
                 ) {
                     Text("Reset Reference")
                 }
@@ -281,7 +280,8 @@ private fun ImuOverview(
                     onClick = { viewModel.saveMountCalibration() },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
-                    enabled = refState.state != org.asr.studio.math.ReferenceState.NOT_SET
+                    enabled = refState.state != org.asr.studio.math.ReferenceState.NOT_SET,
+                    shape = StudioRadii.controlShape,
                 ) {
                     Text("Save Mount Calibration")
                 }
@@ -299,12 +299,12 @@ private fun ImuOverview(
                 Column(
                     modifier = Modifier
                         .weight(1f)
-                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), MaterialTheme.shapes.medium)
                         .padding(12.dp)
                 ) {
-                    Text("RAW SENSOR ORIENTATION", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("RAW SENSOR ORIENTATION", fontSize = StudioTypeSize.caption, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
-                    Text("Pitch: ${"%.1f".format(rawEuler.pitchDeg)}°  Roll: ${"%.1f".format(rawEuler.rollDeg)}°  Yaw: ${"%.1f".format(rawEuler.yawDeg)}°", fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                    Text("Pitch: ${"%.1f".format(rawEuler.pitchDeg)}°  Roll: ${"%.1f".format(rawEuler.rollDeg)}°  Yaw: ${"%.1f".format(rawEuler.yawDeg)}°", fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold, fontSize = StudioTypeSize.controlLabel)
                 }
 
                 // Robot Relative Readout
@@ -313,42 +313,37 @@ private fun ImuOverview(
                     modifier = Modifier
                         .weight(1f)
                         .background(
-                            if (refState.state != org.asr.studio.math.ReferenceState.NOT_SET) Color(0xFF38A169).copy(alpha = 0.1f) else MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
-                            RoundedCornerShape(8.dp)
+                            if (refState.state != org.asr.studio.math.ReferenceState.NOT_SET) StudioColors.success.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                            MaterialTheme.shapes.medium
                         )
                         .padding(12.dp)
                 ) {
-                    Text("ROBOT RELATIVE ORIENTATION (CALIBRATED)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (refState.state != org.asr.studio.math.ReferenceState.NOT_SET) Color(0xFF38A169) else MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("ROBOT RELATIVE ORIENTATION (CALIBRATED)", fontSize = StudioTypeSize.caption, fontWeight = FontWeight.Bold, color = if (refState.state != org.asr.studio.math.ReferenceState.NOT_SET) StudioColors.success else MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
-                    Text("Pitch: ${"%.1f".format(relEuler.pitchDeg)}°  Roll: ${"%.1f".format(relEuler.rollDeg)}°  Yaw: ${"%.1f".format(relEuler.yawDeg)}°", fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = if (refState.state != org.asr.studio.math.ReferenceState.NOT_SET) Color(0xFF38A169) else MaterialTheme.colorScheme.onSurface)
+                    Text("Pitch: ${"%.1f".format(relEuler.pitchDeg)}°  Roll: ${"%.1f".format(relEuler.rollDeg)}°  Yaw: ${"%.1f".format(relEuler.yawDeg)}°", fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = StudioTypeSize.controlLabel, color = if (refState.state != org.asr.studio.math.ReferenceState.NOT_SET) StudioColors.success else MaterialTheme.colorScheme.onSurface)
                 }
             }
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(18.dp),
-        ) {
-            DiagnosticsCard(modifier = Modifier.weight(1.35f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Device Orientation", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.width(10.dp))
-                    Badge("DERIVED")
-                }
-                Spacer(Modifier.height(14.dp))
-                OrientationCanvas(imu, modifier = Modifier.fillMaxWidth().height(360.dp))
-                AxisLegend()
+        DiagnosticsCard {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Live device orientation", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.width(10.dp))
+                Badge("IMU")
+                Spacer(Modifier.weight(1f))
+                Text("Drag to orbit · scroll to zoom", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
             }
-            DiagnosticsCard(modifier = Modifier.weight(1f)) {
-                Text("Phone Pose", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(14.dp))
-                PhonePosePanel(imu)
-                Spacer(Modifier.height(14.dp))
-                Text("Level Indicator", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(14.dp))
-                AttitudeCanvas(imu, modifier = Modifier.fillMaxWidth().aspectRatio(1.25f))
-                Spacer(Modifier.height(12.dp))
-                EulerCards(imu)
+            Spacer(Modifier.height(12.dp))
+            OrientationCanvas(imu, modifier = Modifier.fillMaxWidth().height(420.dp))
+            AxisLegend()
+            Spacer(Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                PhonePosePanel(imu, modifier = Modifier.weight(1f))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Euler angles", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Spacer(Modifier.height(8.dp))
+                    EulerCards(imu)
+                }
             }
         }
 
@@ -361,7 +356,7 @@ private fun ImuOverview(
                 val lx = (imu?.accelX ?: 0f) - (imu?.gravityX ?: 0f)
                 val ly = (imu?.accelY ?: 0f) - (imu?.gravityY ?: 0f)
                 val lz = (imu?.accelZ ?: 0f) - (imu?.gravityZ ?: 0f)
-                VectorSummary("Linear Accel.", "DERIVED", lx, ly, lz, Modifier.weight(1f))
+                VectorSummary("Linear Acceleration", "DERIVED", lx, ly, lz, Modifier.weight(1f))
             }
             Spacer(Modifier.height(10.dp))
             Text(
@@ -461,7 +456,7 @@ private fun RotationTab(imu: ImuData?) {
                 Spacer(Modifier.height(18.dp))
                 Text("Quaternion Components", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(16.dp))
-                QuaternionBar("W", imu?.rotW ?: 1f, Color(0xFFE8EAF0))
+                QuaternionBar("W", imu?.rotW ?: 1f, StudioColors.quaternionW)
                 QuaternionBar("X", imu?.rotX ?: 0f, AxisX)
                 QuaternionBar("Y", imu?.rotY ?: 0f, AxisY)
                 QuaternionBar("Z", imu?.rotZ ?: 0f, AxisZ)
@@ -483,7 +478,7 @@ private fun DiagnosticsCard(modifier: Modifier = Modifier, content: @Composable 
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
-        shape = RoundedCornerShape(8.dp),
+        shape = MaterialTheme.shapes.medium,
     ) {
         Column(modifier = Modifier.padding(18.dp), content = content)
     }
@@ -497,34 +492,42 @@ private fun TabPill(label: String, selected: Boolean, onClick: () -> Unit) {
             .height(38.dp)
             .background(
                 if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
-                RoundedCornerShape(20.dp),
+                StudioRadii.controlShape,
             )
-            .border(1.dp, color.copy(alpha = if (selected) 0.45f else 0.16f), RoundedCornerShape(20.dp))
+            .border(1.dp, color.copy(alpha = if (selected) 0.45f else 0.16f), StudioRadii.controlShape)
             .clickable(onClick = onClick)
             .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(6.dp).background(color.copy(alpha = 0.75f), RoundedCornerShape(50)))
-        Spacer(Modifier.width(8.dp))
-        Text(label, color = color, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+        Text(label, color = color, fontWeight = FontWeight.SemiBold, fontSize = StudioTypeSize.controlLabel)
     }
 }
 
 @Composable
 private fun SensorChip(label: String, meta: String, active: Boolean, modifier: Modifier = Modifier) {
-    Row(
+    Column(
         modifier = modifier
-            .height(46.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f), RoundedCornerShape(8.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .height(58.dp)
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f), StudioRadii.controlShape)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f), StudioRadii.controlShape)
+            .padding(horizontal = 10.dp, vertical = 7.dp),
+        verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        Box(Modifier.size(8.dp).background(if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline, RoundedCornerShape(50)))
-        Spacer(Modifier.width(10.dp))
-        Text(label, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-        Spacer(Modifier.weight(1f))
-        Text(meta, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = FontFamily.Monospace, fontSize = 12.sp)
+        Text(
+            label,
+            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.bodySmall,
+            maxLines = 1,
+            softWrap = false,
+        )
+        Text(
+            if (active) meta else "No data",
+            color = if (active) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.outline,
+            fontFamily = FontFamily.Monospace,
+            fontSize = StudioTypeSize.caption,
+            maxLines = 1,
+            softWrap = false,
+        )
     }
 }
 
@@ -534,8 +537,8 @@ private fun AxisBar(label: String, value: Float, range: Float, color: Color) {
         Text(label, modifier = Modifier.width(24.dp), color = color, fontWeight = FontWeight.Bold)
         Canvas(modifier = Modifier.weight(1f).height(16.dp)) {
             val centerX = size.width / 2f
-            drawRoundRect(Color(0xFF0B0E11), size = size, cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f))
-            drawLine(Color(0xFF303746), Offset(centerX, 0f), Offset(centerX, size.height), strokeWidth = 1.2f)
+            drawRoundRect(StudioColors.canvas, size = size, cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f))
+            drawLine(StudioColors.borderStrong, Offset(centerX, 0f), Offset(centerX, size.height), strokeWidth = 1.2f)
             val clamped = value.coerceIn(-range, range)
             val end = centerX + (clamped / range) * centerX
             drawLine(color, Offset(centerX, size.height / 2f), Offset(end, size.height / 2f), strokeWidth = size.height, cap = StrokeCap.Round)
@@ -550,8 +553,8 @@ private fun QuaternionBar(label: String, value: Float, color: Color) {
         Text(label, modifier = Modifier.width(26.dp), color = color, fontWeight = FontWeight.Bold)
         Canvas(modifier = Modifier.weight(1f).height(15.dp)) {
             val centerX = size.width / 2f
-            drawRoundRect(Color(0xFF0B0E11), size = size, cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f))
-            drawLine(Color(0xFF303746), Offset(centerX, 0f), Offset(centerX, size.height), strokeWidth = 1.1f)
+            drawRoundRect(StudioColors.canvas, size = size, cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f))
+            drawLine(StudioColors.borderStrong, Offset(centerX, 0f), Offset(centerX, size.height), strokeWidth = 1.1f)
             val end = centerX + value.coerceIn(-1f, 1f) * centerX
             drawLine(color, Offset(centerX, size.height / 2f), Offset(end, size.height / 2f), strokeWidth = size.height, cap = StrokeCap.Round)
         }
@@ -561,7 +564,7 @@ private fun QuaternionBar(label: String, value: Float, color: Color) {
 
 @Composable
 private fun TimeSeriesCanvas(values: List<Triple<Float, Float, Float>>, range: Float, modifier: Modifier) {
-    Canvas(modifier = modifier.background(Color(0xFF0B0E11), RoundedCornerShape(8.dp)).padding(10.dp)) {
+    Canvas(modifier = modifier.background(StudioColors.canvas, MaterialTheme.shapes.medium).padding(10.dp)) {
         val pad = 18f
         val left = pad
         val top = pad
@@ -569,7 +572,7 @@ private fun TimeSeriesCanvas(values: List<Triple<Float, Float, Float>>, range: F
         val height = size.height - pad * 2f
         repeat(3) { i ->
             val y = top + height * (i + 1) / 4f
-            drawLine(Color(0xFF222836), Offset(left, y), Offset(left + width, y), strokeWidth = 1f)
+            drawLine(StudioColors.border, Offset(left, y), Offset(left + width, y), strokeWidth = 1f)
         }
         fun drawSeries(points: List<Float>, color: Color) {
             if (points.size < 2) return
@@ -589,68 +592,8 @@ private fun TimeSeriesCanvas(values: List<Triple<Float, Float, Float>>, range: F
 
 @Composable
 private fun OrientationCanvas(imu: ImuData?, modifier: Modifier) {
-    ThreeJsViewport(imu = imu, modifier = modifier)
+    JmeOrientationViewport(imu = imu, modifier = modifier)
 }
-
-@Composable
-private fun AttitudeCanvas(imu: ImuData?, modifier: Modifier) {
-    val pose = imu.toPhonePose()
-    Canvas(modifier = modifier) {
-        val radius = min(size.width, size.height) * 0.42f
-        val center = Offset(size.width / 2f, size.height / 2f)
-        val circle = Path().apply { addOval(androidx.compose.ui.geometry.Rect(center, radius)) }
-        drawCircle(Color(0xFF102632), radius, center)
-        clipPath(circle) {
-            val levelTilt = atan2(pose.gravityX, pose.gravityY)
-            val pitchOffset = ((pose.flatTiltDeg - 45f) / 45f).coerceIn(-1f, 1f) * radius * 0.42f
-            val left = rotate(Offset(center.x - radius * 1.7f, center.y + pitchOffset), center, levelTilt)
-            val right = rotate(Offset(center.x + radius * 1.7f, center.y + pitchOffset), center, levelTilt)
-            val lowRight = rotate(Offset(center.x + radius * 1.7f, center.y + radius * 1.7f), center, levelTilt)
-            val lowLeft = rotate(Offset(center.x - radius * 1.7f, center.y + radius * 1.7f), center, levelTilt)
-            val earth = Path().apply {
-                moveTo(left.x, left.y)
-                lineTo(right.x, right.y)
-                lineTo(lowRight.x, lowRight.y)
-                lineTo(lowLeft.x, lowLeft.y)
-                close()
-            }
-            drawPath(earth, Color(0xFF22170D))
-            drawLine(Color(0xFF43D9C5), left, right, 2.5f)
-        }
-        drawCircle(Color(0xFF43D9C5), radius, center, style = Stroke(width = 2.5f))
-        val needleLen = radius * 0.72f
-        val levelAngle = atan2(pose.gravityX, pose.gravityY)
-        val nx = center.x + sin(levelAngle) * needleLen
-        val ny = center.y - cos(levelAngle) * needleLen
-        drawLine(Color(0xFFFF6B6B), center, Offset(nx, ny), 3f, StrokeCap.Round)
-        drawCircle(Color(0xFF43D9C5), 5f, center)
-    }
-}
-
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.draw3DArrow(start: Offset, end: Offset, color: Color) {
-    drawLine(color, start, end, strokeWidth = 2.3f, cap = StrokeCap.Round)
-    val angle = atan2(end.y - start.y, end.x - start.x)
-    val arrowLen = 12f
-    val p1 = Offset(end.x - arrowLen * cos(angle - 0.5f), end.y - arrowLen * sin(angle - 0.5f))
-    val p2 = Offset(end.x - arrowLen * cos(angle + 0.5f), end.y - arrowLen * sin(angle + 0.5f))
-    val path = Path().apply {
-        moveTo(end.x, end.y)
-        lineTo(p1.x, p1.y)
-        lineTo(p2.x, p2.y)
-        close()
-    }
-    drawPath(path, color)
-}
-
-/** 2D rotation helper used by AttitudeCanvas (artificial horizon). */
-private fun rotate(point: Offset, center: Offset, radians: Float): Offset {
-    val s = sin(radians)
-    val c = cos(radians)
-    val x = point.x - center.x
-    val y = point.y - center.y
-    return Offset(center.x + x * c - y * s, center.y + x * s + y * c)
-}
-
 
 @Composable
 private fun AxisLegend(endLabel: String = "") {
@@ -666,7 +609,7 @@ private fun AxisLegend(endLabel: String = "") {
 @Composable
 private fun LegendItem(label: String, color: Color) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 14.dp)) {
-        Box(Modifier.size(10.dp).background(color, RoundedCornerShape(2.dp)))
+        Box(Modifier.size(10.dp).background(color, MaterialTheme.shapes.medium))
         Spacer(Modifier.width(5.dp))
         Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
     }
@@ -676,8 +619,8 @@ private fun LegendItem(label: String, color: Color) {
 private fun VectorSummary(title: String, badge: String, x: Float, y: Float, z: Float, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.55f), RoundedCornerShape(8.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.55f), MaterialTheme.shapes.medium)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f), MaterialTheme.shapes.medium)
             .padding(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -707,13 +650,13 @@ private fun MiniHistoryStrip(history: List<ImuData>) {
 }
 
 @Composable
-private fun PhonePosePanel(imu: ImuData?) {
+private fun PhonePosePanel(imu: ImuData?, modifier: Modifier = Modifier) {
     val pose = imu.toPhonePose()
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.55f), RoundedCornerShape(8.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.55f), MaterialTheme.shapes.medium)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f), MaterialTheme.shapes.medium)
             .padding(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -736,11 +679,21 @@ private fun PhonePosePanel(imu: ImuData?) {
 private fun PoseMetric(label: String, value: String, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
-            .background(Color(0xFF0B0E11), RoundedCornerShape(7.dp))
-            .padding(10.dp),
+            .background(StudioColors.canvas, MaterialTheme.shapes.medium)
+            .height(64.dp)
+            .padding(horizontal = 8.dp, vertical = 9.dp),
+        verticalArrangement = Arrangement.spacedBy(5.dp),
     ) {
-        Text(label.uppercase(), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-        Text(value, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+        Text(
+            label.uppercase(),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 10.sp,
+            lineHeight = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            softWrap = false,
+        )
+        Text(value, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold, fontSize = StudioTypeSize.compactMetric, maxLines = 1)
     }
 }
 
@@ -758,12 +711,12 @@ private fun EulerCards(imu: ImuData?) {
 private fun AngleCard(label: String, value: Float, color: Color, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.55f), RoundedCornerShape(8.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.55f), MaterialTheme.shapes.medium)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f), MaterialTheme.shapes.medium)
             .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(label, color = color, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        Text(label, color = color, fontSize = StudioTypeSize.supporting, fontWeight = FontWeight.Bold)
         Text("${"%.1f".format(value)} deg", fontFamily = FontFamily.Monospace, fontSize = 20.sp, fontWeight = FontWeight.Bold)
     }
 }
@@ -773,11 +726,11 @@ private fun Badge(text: String) {
     Text(
         text = text,
         color = MaterialTheme.colorScheme.primary,
-        fontSize = 10.sp,
+        fontSize = StudioTypeSize.caption,
         fontWeight = FontWeight.Bold,
         modifier = Modifier
-            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f), RoundedCornerShape(5.dp))
-            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f), RoundedCornerShape(5.dp))
+            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f), MaterialTheme.shapes.medium)
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f), MaterialTheme.shapes.medium)
             .padding(horizontal = 7.dp, vertical = 2.dp),
     )
 }
@@ -921,6 +874,6 @@ private fun formatNumber(value: Float): String {
     return "%.3f".format(cleaned)
 }
 
-private val AxisX = Color(0xFFFF6B6B)
-private val AxisY = Color(0xFF52D273)
-private val AxisZ = Color(0xFF60A5FA)
+private val AxisX = StudioColors.axisX
+private val AxisY = StudioColors.success
+private val AxisZ = StudioColors.axisZ

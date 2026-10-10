@@ -1,5 +1,7 @@
 package org.asr.studio.ui.devices
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,6 +15,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 
 import org.asr.studio.protocol.ConnectMode
+import org.asr.studio.ui.theme.StudioRadii
+import org.asr.studio.ui.theme.StudioColors
 
 @Composable
 fun DevicesScreen(viewModel: DevicesViewModel) {
@@ -54,7 +58,8 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                                 if (activeConnectionMode == ConnectMode.WIFI) "Wi-Fi (ACTIVE)" else "Wi-Fi"
                             )
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        shape = StudioRadii.controlShape,
                     )
                     FilterChip(
                         selected = viewModel.mode == ConnectMode.ADB,
@@ -64,7 +69,8 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                                 if (activeConnectionMode == ConnectMode.ADB) "USB / ADB (ACTIVE)" else "USB / ADB"
                             )
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        shape = StudioRadii.controlShape,
                     )
                 }
                 Text(
@@ -141,7 +147,8 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                     },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    enabled = isInputEnabled
+                    enabled = isInputEnabled,
+                    shape = StudioRadii.controlShape,
                 )
 
                 OutlinedTextField(
@@ -150,7 +157,8 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                     label = { Text("Port") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    enabled = isInputEnabled
+                    enabled = isInputEnabled,
+                    shape = StudioRadii.controlShape,
                 )
 
                 if (viewModel.mode == ConnectMode.ADB) {
@@ -162,9 +170,12 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                         modifier = Modifier.fillMaxWidth(),
                         enabled = isInputEnabled,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
+                            containerColor = StudioColors.panelRaised,
+                            contentColor = StudioColors.textPrimary,
+                            disabledContainerColor = StudioColors.panelRaised,
+                            disabledContentColor = StudioColors.textMuted,
+                        ),
+                        shape = StudioRadii.controlShape,
                     ) {
                         Text("Auto-Configure USB / ADB (1-Click Setup)")
                     }
@@ -174,7 +185,7 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                             text = status,
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Medium,
-                            color = if (status.startsWith("✅")) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                            color = if (status.startsWith("Configured:")) StudioColors.accentText else MaterialTheme.colorScheme.error,
                         )
                     }
                 }
@@ -183,7 +194,7 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Button(
+                    OutlinedButton(
                         onClick = {
                             val resolvedHost = viewModel.host.ifBlank {
                                 if (viewModel.mode == ConnectMode.ADB) "127.0.0.1" else ""
@@ -192,7 +203,13 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                             viewModel.connect(resolvedHost, resolvedPort)
                         },
                         modifier = Modifier.weight(1f),
-                        enabled = isInputEnabled && (viewModel.mode == ConnectMode.ADB || viewModel.host.isNotBlank())
+                        enabled = isInputEnabled && (viewModel.mode == ConnectMode.ADB || viewModel.host.isNotBlank()),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = StudioColors.textSecondary,
+                            disabledContentColor = StudioColors.textMuted,
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, StudioColors.borderStrong),
+                        shape = StudioRadii.controlShape,
                     ) {
                         Text("Connect (Client)")
                     }
@@ -205,8 +222,12 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                         modifier = Modifier.weight(1f),
                         enabled = isInputEnabled,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
+                            containerColor = StudioColors.accent,
+                            contentColor = StudioColors.canvas,
+                            disabledContainerColor = StudioColors.panelRaised,
+                            disabledContentColor = StudioColors.textMuted,
+                        ),
+                        shape = StudioRadii.controlShape,
                     ) {
                         Text("Listen (Server)")
                     }
@@ -221,34 +242,41 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                             onClick = { viewModel.startRuntime() },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.tertiary
-                            )
+                                containerColor = StudioColors.accent,
+                                contentColor = StudioColors.canvas,
+                            ),
+                            shape = StudioRadii.controlShape,
                         ) {
                             Text("Start ASR Runtime")
                         }
 
-                        Button(
+                        OutlinedButton(
                             onClick = { viewModel.stopRuntime() },
                             modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.error
-                            )
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = StudioColors.textSecondary,
+                                disabledContentColor = StudioColors.textMuted,
+                            ),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, StudioColors.borderStrong),
+                            shape = StudioRadii.controlShape,
                         ) {
                             Text("Stop ASR Runtime")
                         }
                     }
                 }
 
-                Button(
+                OutlinedButton(
                     onClick = {
                         viewModel.disconnect()
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = StudioColors.textSecondary,
+                        disabledContentColor = StudioColors.textMuted,
                     ),
-                    enabled = connectionState != ConnectionState.Disconnected
+                    border = androidx.compose.foundation.BorderStroke(1.dp, StudioColors.borderStrong),
+                    enabled = connectionState != ConnectionState.Disconnected,
+                    shape = StudioRadii.controlShape,
                 ) {
                     Text("Disconnect")
                 }
@@ -256,9 +284,13 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
         }
 
         // ── Status pill ──────────────────────────────────────────────────────
-        Card(modifier = Modifier.fillMaxWidth()) {
+        Card(
+            modifier = Modifier.fillMaxWidth().border(1.dp, StudioColors.border, StudioRadii.panelShape),
+            colors = CardDefaults.cardColors(containerColor = StudioColors.panel),
+            shape = StudioRadii.panelShape,
+        ) {
             Row(
-                modifier = Modifier.padding(24.dp).fillMaxWidth(),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp).fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -274,27 +306,26 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                             ConnectionState.Connecting -> "Connecting..."
                             else -> "Disconnected"
                         },
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
                         color = when (connectionState) {
-                            ConnectionState.Connected  -> MaterialTheme.colorScheme.primary
-                            ConnectionState.Connecting -> MaterialTheme.colorScheme.secondary
-                            else -> MaterialTheme.colorScheme.onSurface
-                        }
+                        ConnectionState.Connected  -> StudioColors.accentText
+                        ConnectionState.Connecting -> StudioColors.warning
+                        else -> StudioColors.textPrimary
+                        },
                     )
                 }
-                Text(
-                    text = when (connectionState) {
-                        ConnectionState.Connected  -> "●"
-                        ConnectionState.Connecting -> "◌"
-                        else -> "○"
-                    },
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = when (connectionState) {
-                        ConnectionState.Connected  -> MaterialTheme.colorScheme.primary
-                        ConnectionState.Connecting -> MaterialTheme.colorScheme.secondary
-                        else -> MaterialTheme.colorScheme.outline
-                    }
+                Box(
+                    Modifier
+                        .size(12.dp)
+                        .background(
+                            when (connectionState) {
+                                ConnectionState.Connected -> StudioColors.accent
+                                ConnectionState.Connecting -> StudioColors.warning
+                                else -> StudioColors.textMuted
+                            },
+                            StudioRadii.controlShape,
+                        )
                 )
             }
         }

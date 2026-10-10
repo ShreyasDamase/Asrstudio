@@ -2,23 +2,21 @@ package org.asr.studio.ui.speaker
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.asr.studio.data.SpeakerLogEvent
-import org.asr.studio.data.SpeakerTelemetryData
+import org.asr.studio.ui.components.StudioToggle
+import org.asr.studio.ui.theme.StudioSpacing
+import org.asr.studio.ui.theme.StudioRadii
 
 @Composable
 fun SpeakerScreen(viewModel: SpeakerViewModel) {
@@ -33,54 +31,33 @@ fun SpeakerScreen(viewModel: SpeakerViewModel) {
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(StudioSpacing.page),
+        verticalArrangement = Arrangement.spacedBy(StudioSpacing.lg)
     ) {
 
         // ── Status Overview Card ──────────────────────────────────────────────
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            )
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.padding(StudioSpacing.lg),
+                verticalArrangement = Arrangement.spacedBy(StudioSpacing.md)
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.VolumeUp,
-                            contentDescription = "Speaker",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = "Speaker Module Hardware",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    Surface(
-                        color = Color(0xFF38A169).copy(alpha = 0.15f),
-                        shape = MaterialTheme.shapes.small
-                    ) {
-                        Text(
-                            text = "● RUNNING",
-                            color = Color(0xFF38A169),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.VolumeUp,
+                        contentDescription = "Speaker",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = "Speaker output",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
                 }
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
@@ -102,53 +79,54 @@ fun SpeakerScreen(viewModel: SpeakerViewModel) {
                         Text("${telemetry.volume}%", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                     }
                     Column {
-                        Text("Abstraction", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("Android TTS", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                        Text("Output", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Android TTS", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
         }
 
-        // ── Predefined Diagnostic Tests ──────────────────────────────────────
+        // ── Quick Speech Tests ───────────────────────────────────────────────
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                containerColor = MaterialTheme.colorScheme.surface
             )
         ) {
             Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.padding(StudioSpacing.lg),
+                verticalArrangement = Arrangement.spacedBy(StudioSpacing.md)
             ) {
                 Text(
-                    text = "Predefined Diagnostic Tests",
+                    text = "Quick tests",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold
                 )
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm)
                 ) {
-                    Button(
+                    OutlinedButton(
                         onClick = { viewModel.testVoice() },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        shape = StudioRadii.controlShape,
                     ) {
-                        Text("Voice Test")
+                        Text("Voice")
                     }
-                    Button(
+                    OutlinedButton(
                         onClick = { viewModel.testWarning() },
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                        shape = StudioRadii.controlShape,
                     ) {
-                        Text("Warning Test")
+                        Text("Warning")
                     }
-                    Button(
+                    OutlinedButton(
                         onClick = { viewModel.testSequence() },
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                        shape = StudioRadii.controlShape,
                     ) {
-                        Text("Sequence Test")
+                        Text("Sequence")
                     }
                 }
             }
@@ -158,15 +136,15 @@ fun SpeakerScreen(viewModel: SpeakerViewModel) {
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                containerColor = MaterialTheme.colorScheme.surface
             )
         ) {
             Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.padding(StudioSpacing.lg),
+                verticalArrangement = Arrangement.spacedBy(StudioSpacing.md)
             ) {
                 Text(
-                    text = "Custom Speech Command",
+                    text = "Custom speech",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -174,30 +152,18 @@ fun SpeakerScreen(viewModel: SpeakerViewModel) {
                 OutlinedTextField(
                     value = customText,
                     onValueChange = { customText = it },
-                    label = { Text("Speech Text") },
+                    label = { Text("Text to speak") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    shape = StudioRadii.controlShape,
                 )
 
-                // Natural mode toggle
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text("Speech Mode", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                        Text(
-                            if (naturalMode) "SSML naturalisation active" else "Raw text — direct output",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Switch(
-                        checked = naturalMode,
-                        onCheckedChange = { viewModel.setNaturalMode(it) }
-                    )
-                }
+                StudioToggle(
+                    checked = naturalMode,
+                    onCheckedChange = viewModel::setNaturalMode,
+                    label = "Natural speech formatting",
+                    supportingText = if (naturalMode) "Enabled" else "Send text as written",
+                )
 
                 if (naturalMode && customText.isNotBlank()) {
                     val ssmlPreview = remember(customText) { 
@@ -206,7 +172,7 @@ fun SpeakerScreen(viewModel: SpeakerViewModel) {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
                         )
                     ) {
                         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -225,9 +191,10 @@ fun SpeakerScreen(viewModel: SpeakerViewModel) {
                 Button(
                     onClick = { viewModel.speak(customText) },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = customText.isNotBlank()
+                    enabled = customText.isNotBlank(),
+                    shape = StudioRadii.controlShape,
                 ) {
-                    Text("🔊 SPEAK (Send to Phone Speaker)")
+                    Text("Send speech command")
                 }
             }
         }
@@ -236,47 +203,28 @@ fun SpeakerScreen(viewModel: SpeakerViewModel) {
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                containerColor = MaterialTheme.colorScheme.surface
             )
         ) {
             Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.padding(StudioSpacing.lg),
+                verticalArrangement = Arrangement.spacedBy(StudioSpacing.md)
             ) {
                 Text(
-                    text = "Speaker Telemetry & Diagnostics",
+                    text = "Activity",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold
                 )
 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Status", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(telemetry.status, fontWeight = FontWeight.Bold, color = Color(0xFF38A169))
-                }
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Commands Sent", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(telemetry.commandsSent.toString(), fontWeight = FontWeight.Bold)
-                }
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Completed", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(telemetry.completedCount.toString(), fontWeight = FontWeight.Bold, color = Color(0xFF38A169))
-                }
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Failed", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(telemetry.failedCount.toString(), fontWeight = FontWeight.Bold)
-                }
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Last Latency", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("${telemetry.lastLatencyMs} ms", fontWeight = FontWeight.Bold)
-                }
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Last Speech Text", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(telemetry.lastSpeechText, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
-                }
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Last Result", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(telemetry.lastResult, fontWeight = FontWeight.Bold, color = if (telemetry.lastResult == "SUCCESS") Color(0xFF38A169) else MaterialTheme.colorScheme.primary)
-                }
+                ActivityRow("Commands sent", telemetry.commandsSent.toString())
+                ActivityRow("Completed", telemetry.completedCount.toString())
+                ActivityRow("Failed", telemetry.failedCount.toString())
+                ActivityRow("Last latency", "${telemetry.lastLatencyMs} ms")
+                ActivityRow("Last speech text", telemetry.lastSpeechText, mono = true)
+                ActivityRow(
+                    "Last result",
+                    telemetry.lastResult.lowercase().replaceFirstChar { it.uppercase() },
+                )
             }
         }
 
@@ -284,12 +232,12 @@ fun SpeakerScreen(viewModel: SpeakerViewModel) {
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                containerColor = MaterialTheme.colorScheme.surface
             )
         ) {
             Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.padding(StudioSpacing.lg),
+                verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm)
             ) {
                 Text(
                     text = "Speech Execution Event Log",
@@ -311,20 +259,49 @@ fun SpeakerScreen(viewModel: SpeakerViewModel) {
                             .verticalScroll(rememberScrollState())
                             .background(MaterialTheme.colorScheme.surface, shape = MaterialTheme.shapes.small)
                             .padding(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm)
                     ) {
-                        logEvents.forEach { event ->
-                            Text(
-                                text = "•  \"${event.text}\" — ${event.status}",
-                                style = MaterialTheme.typography.bodySmall,
-                                fontFamily = FontFamily.Monospace,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
+                        logEvents.forEachIndexed { index, event ->
+                            if (index > 0) {
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                            }
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(
+                                    text = event.text,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                                Text(
+                                    text = event.status.lowercase().replaceFirstChar { it.uppercase() },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
                 }
             }
         }
 
+    }
+}
+
+@Composable
+private fun ActivityRow(label: String, value: String, mono: Boolean = false) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            text = value,
+            modifier = Modifier.weight(1f).padding(start = StudioSpacing.lg),
+            style = MaterialTheme.typography.bodyMedium,
+            fontFamily = if (mono) FontFamily.Monospace else FontFamily.Default,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            textAlign = androidx.compose.ui.text.style.TextAlign.End,
+        )
     }
 }

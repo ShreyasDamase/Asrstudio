@@ -4,14 +4,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -22,6 +20,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.asr.studio.data.*
 import org.asr.studio.runAdbShell
+import org.asr.studio.ui.theme.StudioColors
+import org.asr.studio.ui.theme.StudioSpacing
+import org.asr.studio.ui.theme.StudioRadii
+import org.asr.studio.ui.theme.StudioTypeSize
+import org.asr.studio.ui.components.StudioToggle
 
 /**
  * Real-time Robotics Dashboard & Hardware Thermal Manager.
@@ -93,12 +96,14 @@ fun DashboardScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp)
+            .padding(horizontal = StudioSpacing.page, vertical = StudioSpacing.lg)
             .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
+        verticalArrangement = Arrangement.spacedBy(StudioSpacing.lg)
     ) {
-        // ── Top Bar: Mobile Health & Telemetry Metrics ──────────────────────
-        Text("Mobile Health & Telemetry", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text("Device overview", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text("Health, sensor modules, and telemetry received from the phone.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -107,9 +112,9 @@ fun DashboardScreen(
             // Battery Level Card
             val batteryLevel = battery?.level ?: 0f
             val batteryColor = when {
-                batteryLevel > 50f -> Color(0xFF4ADE80)
-                batteryLevel > 20f -> Color(0xFFFBBF24)
-                else -> Color(0xFFF87171)
+                batteryLevel > 50f -> StudioColors.success
+                batteryLevel > 20f -> StudioColors.warning
+                else -> StudioColors.error
             }
             HealthCard(
                 title = "Battery",
@@ -122,12 +127,12 @@ fun DashboardScreen(
             // Thermal / Temperature Card
             val tempC = battery?.temperature ?: 0f
             val tempColor = when {
-                tempC < 38f -> Color(0xFF4ADE80) // Cool
-                tempC < 43f -> Color(0xFFFBBF24) // Warm
-                else -> Color(0xFFF87171)        // Hot
+                tempC < 38f -> StudioColors.success // Cool
+                tempC < 43f -> StudioColors.warning // Warm
+                else -> StudioColors.error        // Hot
             }
             HealthCard(
-                title = "Battery Temp",
+                title = "Battery temp",
                 value = if (battery != null) "${"%.1f".format(tempC)}°C" else "--",
                 subtitle = if (tempC > 42f) "High Thermal Load — stop unused modules" else "Optimal thermal range",
                 valueColor = tempColor,
@@ -136,19 +141,24 @@ fun DashboardScreen(
 
             // Ambient Lux
             HealthCard(
-                title = "Ambient Light",
+                title = "Ambient light",
                 value = if (lightSensor != null) "${lightSensor!!.lux.toInt()} lux" else "--",
                 subtitle = if (lightSensor != null && lightSensor!!.lux < 50f) "Low light environment" else "Normal light environment",
-                valueColor = Color(0xFF5EEAD4),
+                valueColor = StudioColors.accent,
                 modifier = Modifier.weight(1f)
             )
 
             // Active Packet Stream Rate
+            val hasSensorData = imu != null || latestCameraFrame != null
             HealthCard(
-                title = "Data Stream",
-                value = if (imu != null || latestCameraFrame != null) "ONLINE" else "IDLE",
-                subtitle = if (latestCameraFrame != null) "${latestCameraFrame!!.width}x${latestCameraFrame!!.height} @ ${"%.0f".format(latestCameraFrame!!.fps)}fps" else "Sensors streaming",
-                valueColor = if (imu != null || latestCameraFrame != null) Color(0xFF5EEAD4) else Color(0xFF8B90A3),
+                title = "Telemetry",
+                value = if (hasSensorData) "DATA SEEN" else "NO DATA",
+                subtitle = when {
+                    latestCameraFrame != null -> "Camera ${latestCameraFrame!!.width}×${latestCameraFrame!!.height} · ${"%.0f".format(latestCameraFrame!!.fps)} fps"
+                    imu != null -> "IMU sample available"
+                    else -> "Waiting for sensor messages"
+                },
+                valueColor = if (hasSensorData) StudioColors.accentText else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -156,68 +166,60 @@ fun DashboardScreen(
         // ── Sensor Power & Thermal Management ───────────────────────────────
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
-            shape = RoundedCornerShape(8.dp)
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            shape = MaterialTheme.shapes.medium
         ) {
-            Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(modifier = Modifier.padding(StudioSpacing.lg), verticalArrangement = Arrangement.spacedBy(StudioSpacing.lg)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Hardware Sensor Power & Thermal Control", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text("Sensor modules", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         Text(
-                            "Selectively disable modules to prevent phone overheating and extend battery life during calibration.",
+                            "Control phone sensors independently.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
-                    // Master ALL ON / ALL OFF Buttons
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Button(
+                    Row(horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
+                        OutlinedButton(
                             onClick = { toggleAll(true) },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF059669),
-                                contentColor = Color.White
-                            ),
-                            shape = RoundedCornerShape(6.dp)
+                            shape = StudioRadii.controlShape,
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+                            contentPadding = PaddingValues(horizontal = StudioSpacing.md, vertical = StudioSpacing.xs),
                         ) {
-                            Text("ALL ON", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            Text("Enable all", fontWeight = FontWeight.Medium, fontSize = StudioTypeSize.controlLabel)
                         }
 
-                        Button(
+                        OutlinedButton(
                             onClick = { toggleAll(false) },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFDC2626),
-                                contentColor = Color.White
-                            ),
-                            shape = RoundedCornerShape(6.dp)
+                            shape = StudioRadii.controlShape,
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
+                            contentPadding = PaddingValues(horizontal = StudioSpacing.md, vertical = StudioSpacing.xs),
                         ) {
-                            Text("ALL OFF", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            Text("Disable all", fontWeight = FontWeight.Medium, fontSize = StudioTypeSize.controlLabel)
                         }
                     }
                 }
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
 
-                // Sensor Toggles Grid (2 Rows x 3 Cols)
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.md)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(StudioSpacing.md), modifier = Modifier.fillMaxWidth()) {
                         SensorToggleCard(
                             name = "Camera Stream",
                             subtext = "High CPU / ISP load",
                             active = cameraActive,
-                            isStreaming = latestCameraFrame != null,
                             onToggle = { sendModuleCommand("camera", it) },
                             modifier = Modifier.weight(1f)
                         )
                         SensorToggleCard(
                             name = "IMU Suite",
-                            subtext = "Accel, Gyro, Mag (400Hz)",
+                            subtext = "Accel, Gyro, Mag · 400 Hz",
                             active = imuActive,
-                            isStreaming = imu != null,
                             onToggle = { sendModuleCommand("imu", it) },
                             modifier = Modifier.weight(1f)
                         )
@@ -225,18 +227,16 @@ fun DashboardScreen(
                             name = "GPS Navigation",
                             subtext = "High power GPS lock",
                             active = gpsActive,
-                            isStreaming = gps != null,
                             onToggle = { sendModuleCommand("gps", it) },
                             modifier = Modifier.weight(1f)
                         )
                     }
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(StudioSpacing.md), modifier = Modifier.fillMaxWidth()) {
                         SensorToggleCard(
                             name = "Microphone Array",
                             subtext = "16 kHz PCM Audio",
                             active = audioActive,
-                            isStreaming = mic != null,
                             onToggle = { sendModuleCommand("audio", it) },
                             modifier = Modifier.weight(1f)
                         )
@@ -244,7 +244,6 @@ fun DashboardScreen(
                             name = "TTS Speaker",
                             subtext = "Voice alert synthesis",
                             active = speakerActive,
-                            isStreaming = true,
                             onToggle = { sendModuleCommand("speaker", it) },
                             modifier = Modifier.weight(1f)
                         )
@@ -252,7 +251,6 @@ fun DashboardScreen(
                             name = "Environment",
                             subtext = "Light / Temp sensors",
                             active = envActive,
-                            isStreaming = lightSensor != null,
                             onToggle = { sendModuleCommand("environment", it) },
                             modifier = Modifier.weight(1f)
                         )
@@ -262,9 +260,9 @@ fun DashboardScreen(
                 if (adbStatusMessage.isNotBlank()) {
                     Text(
                         adbStatusMessage,
-                        fontSize = 11.sp,
+                        fontSize = StudioTypeSize.caption,
                         fontFamily = FontFamily.Monospace,
-                        color = Color(0xFF5EEAD4),
+                        color = StudioColors.accent,
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 }
@@ -284,12 +282,12 @@ private fun HealthCard(
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
-        shape = RoundedCornerShape(8.dp)
+        shape = MaterialTheme.shapes.medium
     ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(title.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(value, fontSize = 24.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, color = valueColor)
-            Text(subtitle, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(modifier = Modifier.padding(StudioSpacing.lg), verticalArrangement = Arrangement.spacedBy(StudioSpacing.xs)) {
+            Text(title, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(value, fontSize = StudioTypeSize.metric, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.Monospace, color = valueColor)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -299,50 +297,26 @@ private fun SensorToggleCard(
     name: String,
     subtext: String,
     active: Boolean,
-    isStreaming: Boolean,
     onToggle: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier.border(
             width = 1.dp,
-            color = if (active) MaterialTheme.colorScheme.primary.copy(alpha = 0.35f) else Color.Transparent,
-            shape = RoundedCornerShape(8.dp)
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
+            shape = MaterialTheme.shapes.medium
         ),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.60f)
         ),
-        shape = RoundedCornerShape(8.dp)
+        shape = MaterialTheme.shapes.medium
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(14.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Box(
-                        Modifier
-                            .size(7.dp)
-                            .background(
-                                color = if (active && isStreaming) Color(0xFF4ADE80) else if (active) Color(0xFFFBBF24) else Color(0xFF64748B),
-                                shape = CircleShape
-                            )
-                    )
-                    Text(name, fontWeight = FontWeight.Bold, fontSize = 13.5.sp)
-                }
-                Spacer(Modifier.height(2.dp))
-                Text(subtext, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-
-            Switch(
-                checked = active,
-                onCheckedChange = onToggle,
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = Color(0xFF5EEAD4),
-                    checkedTrackColor = Color(0xFF0F766E)
-                )
-            )
-        }
+        StudioToggle(
+            checked = active,
+            onCheckedChange = onToggle,
+            label = name,
+            supportingText = subtext,
+            modifier = Modifier.padding(horizontal = StudioSpacing.md),
+        )
     }
 }

@@ -7,7 +7,6 @@ plugins {
 kotlin {
     jvm()
     
-    
     sourceSets {
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -20,11 +19,13 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.ktor.network)
-            // 3D math library for accurate quaternion → rotation matrix → projection
-            implementation("org.joml:joml:1.10.7")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
     }
+}
+
+compose.resources {
+    packageOfResClass = "org.asr.studio.generated.resources"
 }

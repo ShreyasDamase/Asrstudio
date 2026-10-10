@@ -32,7 +32,7 @@ class DevicesViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             val result = org.asr.studio.runAdbReverseAutoSetup(portVal)
             adbStatusMessage = result
-            if (result.startsWith("✅")) {
+            if (result.startsWith("Configured:")) {
                 listen("127.0.0.1", portVal)
             }
         }

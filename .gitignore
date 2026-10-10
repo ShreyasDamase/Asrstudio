@@ -1,4 +1,5 @@
 *.iml
+hs_err_pid*.log
 .kotlin
 .gradle
 **/build/

@@ -18,7 +18,6 @@ dependencies {
 compose.desktop {
     application {
         mainClass = "org.asr.studio.MainKt"
-
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "org.asr.studio"
