@@ -123,7 +123,7 @@ private fun GettingStartedDoc() {
         DocCard(title = "System Component Overview", icon = Icons.Default.Layers) {
             DocBullet("ASR Android Runtime", "Runs phone sensor modules and exposes ROS 2 DDS and optional TCP connections.")
             DocBullet("ASR Studio", "Desktop diagnostics client for camera, IMU, audio, GPS, device state, and ASR packet inspection.")
-            DocBullet("ROS 2 USB Link Monitor", "Optional persistent ROS 2 host node for USB-tether link and sensor-flow diagnostics. Wi-Fi DDS does not require this helper.")
+            DocBullet("ROS 2 Link Monitor", "Companion ROS 2 node for USB-tether and Wi-Fi DDS link, active discovery, and sensor-flow diagnostics.")
         }
 
         DocCard(title = "First Connection", icon = Icons.Default.PlayArrow) {
@@ -131,7 +131,7 @@ private fun GettingStartedDoc() {
 # 1. On Android: open ASR Runtime, grant needed permissions, and start Runtime.
 # 2. For the desktop app: use the TCP section in ASR Runtime and ASR Studio -> Devices.
 # 3. For ROS 2: enable Wi-Fi DDS or USB DDS separately in the phone app.
-# 4. For USB DDS diagnostics, use the separate asr_ros2 USB monitor.
+# 4. For DDS diagnostics & active discovery, launch asr_ros2 (transport:=wifi or transport:=usb).
 
 ROS_DOMAIN_ID=0
 RMW_IMPLEMENTATION=rmw_fastrtps_cpp
@@ -161,11 +161,11 @@ private fun ConnectivityDoc() {
             DocBullet("Scope", "ADB forwarding is only the Studio TCP path. It does not enable ROS 2 DDS or USB tethering.")
         }
 
-        DocCard(title = "ROS 2 DDS over USB tethering", icon = Icons.Default.Hub) {
-            DocBullet("Phone", "Connect USB, enable USB tethering in Android system settings, start Runtime, and enable USB DDS in the app.")
+        DocCard(title = "ROS 2 DDS (USB and Wi-Fi)", icon = Icons.Default.Hub) {
+            DocBullet("Phone", "Enable USB DDS (with USB tethering) or Wi-Fi DDS in the phone app. State remains 'Waiting for discovery' until a ROS 2 peer listens.")
             DocBullet("Host", "Use a sourced ROS 2 environment with rmw_fastrtps_cpp and the same ROS_DOMAIN_ID (default 0).")
-            DocBullet("Monitor", "Run ros2 launch asr_ros2 connect.launch.py transport:=usb. Add interface:=<name> if interface selection is ambiguous.")
-            DocBullet("Wi-Fi DDS", "No ASR helper is needed. Enable Wi-Fi DDS and use a normal ROS 2 subscriber or persistent robot node.")
+            DocBullet("Wi-Fi Monitor", "Run ros2 launch asr_ros2 connect.launch.py transport:=wifi to trigger active discovery and monitor sensor streams.")
+            DocBullet("USB Monitor", "Run ros2 launch asr_ros2 connect.launch.py transport:=usb. Add interface:=<name> if tether interface selection is ambiguous.")
         }
     }
 }
