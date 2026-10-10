@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import org.asr.studio.ui.theme.StudioColors
 
 /** Keep this value aligned with desktopApp's nativeDistributions.packageVersion. */
-private const val STUDIO_VERSION = "1.0.0"
+private const val STUDIO_VERSION = "1.0.1"
 
 @Composable
 fun AboutScreen() {

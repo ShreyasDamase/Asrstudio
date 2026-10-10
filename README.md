@@ -14,11 +14,13 @@ ASR Studio's TCP connection and ROS 2 DDS are different paths. The desktop appli
 
 ## Downloads
 
-| Version | OS | Asset |
-| ------- | -- | ----- |
-| 1.0.0 | macOS | [ASR Studio macOS Release](https://github.com/ShreyasDamase/asr-studio/releases/latest) |
-| 1.0.0 | Windows | [ASR Studio Windows Release](https://github.com/ShreyasDamase/asr-studio/releases/latest) |
-| 1.0.0 | Linux | [ASR Studio Linux Release](https://github.com/ShreyasDamase/asr-studio/releases/latest) |
+| Version | OS | Installer |
+| ------- | -- | --------- |
+| 1.0.1 | macOS | [DMG](https://github.com/ShreyasDamase/Asrstudio/releases/latest) |
+| 1.0.1 | Windows 10/11 x64 | [MSI](https://github.com/ShreyasDamase/Asrstudio/releases/latest) |
+| 1.0.1 | Ubuntu 24.04 x64 | [DEB](https://github.com/ShreyasDamase/Asrstudio/releases/latest) |
+
+The release page includes SHA-256 checksums for installer verification. ASR Studio packages include a bundled Java runtime, so a separate Java installation is not required to run the app.
 
 
 ## Requirements
@@ -37,7 +39,26 @@ From the repository root:
 ./gradlew :desktopApp:run
 ```
 
-The desktop distribution version is `1.0.0`. Open **About** in the app sidebar to see the application version and purpose.
+The desktop distribution version is `1.0.1`. Open **About** in the app sidebar to see the application version and purpose.
+
+### Build native installers
+
+Compose Desktop uses the JDK `jpackage` tool to create platform-native installers. Build each package on its target operating system:
+
+```powershell
+# Windows (JDK 17+ and WiX Toolset 3.x)
+.\gradlew.bat :desktopApp:packageMsi
+```
+
+```bash
+# Ubuntu (JDK 17+ and fakeroot)
+./gradlew :desktopApp:packageDeb
+
+# macOS
+./gradlew :desktopApp:packageDmg
+```
+
+The Windows MSI and Ubuntu DEB are built and smoke-checked through the repository's cross-platform GitHub Actions release workflow.
 
 ## Connect ASR Studio to the phone
 

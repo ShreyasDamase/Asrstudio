@@ -31,4 +31,4 @@ Describe the user-visible change, the reason for it, how it was verified, and an
 
 ## License
 
-The repository license is not yet established. Until a license is added, contributions and redistribution terms are not defined. Resolve this with the maintainers before publishing a distributable release.
+ASR Studio is distributed under the MIT License. See [LICENSE](LICENSE) and [NOTICE.txt](NOTICE.txt) for the project license and third-party notices.

@@ -21,16 +21,19 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "ASR Studio"
-            packageVersion = "1.0.0"
+            packageVersion = "1.0.1"
 
             macOS {
                 iconFile.set(project.file("src/main/resources/icon.icns"))
             }
             windows {
                 iconFile.set(project.file("src/main/resources/icon.ico"))
+                upgradeUuid = "67D8E8D2-8680-4D5E-BD51-1E50E69FC161"
             }
             linux {
                 iconFile.set(project.file("src/main/resources/icon.png"))
+                packageName = "asr-studio"
+                appCategory = "Utility"
             }
         }
     }
