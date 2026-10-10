@@ -20,7 +20,7 @@ compose.desktop {
         mainClass = "org.asr.studio.MainKt"
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "org.asr.studio"
+            packageName = "ASR Studio"
             packageVersion = "1.0.0"
         }
     }
