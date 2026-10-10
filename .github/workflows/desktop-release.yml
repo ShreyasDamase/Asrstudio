@@ -76,9 +76,12 @@ jobs:
           extracted="$RUNNER_TEMP/asr-studio-deb"
           mkdir -p "$extracted"
           dpkg-deb --extract release-assets/ASR-Studio-1.0.1-ubuntu-24.04-x64.deb "$extracted"
-          launcher="$extracted/opt/asr-studio/bin/asr-studio"
-          test -n "$launcher"
-          test -x "$launcher"
+          launcher="$(find "$extracted" -type f -executable -path '*/bin/*' ! -path '*/lib/runtime/*' -print -quit)"
+          if [ -z "$launcher" ]; then
+            echo "No executable application launcher was found in the extracted DEB"
+            find "$extracted/opt" -maxdepth 5 -type f -print
+            exit 1
+          fi
           set +e
           xvfb-run -a timeout --signal=TERM 15s "$launcher"
           status=$?
