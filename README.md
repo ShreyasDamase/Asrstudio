@@ -12,6 +12,15 @@ ASR Studio's TCP connection and ROS 2 DDS are different paths. The desktop appli
 - Audio, speaker, GPS, device, and protocol diagnostics.
 - In-app guides for setup, connectivity, sensors, and ROS 2 topics.
 
+## Downloads
+
+| Version | OS | Asset |
+| ------- | -- | ----- |
+| 1.0.0 | macOS | [ASR Studio macOS Release](https://github.com/ShreyasDamase/asr-studio/releases/latest) |
+| 1.0.0 | Windows | [ASR Studio Windows Release](https://github.com/ShreyasDamase/asr-studio/releases/latest) |
+| 1.0.0 | Linux | [ASR Studio Linux Release](https://github.com/ShreyasDamase/asr-studio/releases/latest) |
+
+
 ## Requirements
 
 - JDK 17 or later.
