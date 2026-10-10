@@ -66,4 +66,6 @@ The Android app publishes DDS topics under `/asr_android_<device-id>`. The host 
 
 ## Source and licensing
 
-This repository currently has no `LICENSE` file, so its terms for use, modification, and redistribution are not yet defined. A license and third-party notices must be added before calling this an open-source release or distributing it. See the [release readiness list](ROADMAP.md).
+This project is maintained by [Shreyas Damase](https://github.com/ShreyasDamase).
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. Third-party licenses and attribution notices are provided in the [NOTICE.txt](NOTICE.txt) file.

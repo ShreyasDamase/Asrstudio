@@ -43,6 +43,7 @@ fun AboutScreen() {
                 AboutRow("Application", "ASR Studio")
                 AboutRow("Version", STUDIO_VERSION)
                 AboutRow("Platform", "Desktop")
+                AboutRow("Maintainer", "Shreyas Damase (https://github.com/ShreyasDamase)")
                 AboutRow("Data connection", "ASR Android Runtime over TCP · port 4242")
                 AboutRow("ROS 2 DDS", "Configured separately on the Android device and ROS 2 host")
             }

@@ -23,7 +23,6 @@ import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Router
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.HorizontalDivider
@@ -127,13 +126,6 @@ private enum class AppScreen(
         title = "Protocol Inspector",
         description = "Inspect packets, sequence numbers, CRC, and payloads.",
         icon = Icons.AutoMirrored.Filled.Article,
-        group = "TOOLS",
-    ),
-    Logs(
-        label = "Logs",
-        title = "Logs",
-        description = "Log viewer is not available in this build.",
-        icon = Icons.Default.Terminal,
         group = "TOOLS",
     ),
     Docs(

@@ -13,17 +13,17 @@ This roadmap reflects the current desktop application. It is a planning document
 
 ## Release readiness
 
-- [ ] Add a repository license selected by the maintainers.
-- [ ] Audit bundled assets and dependencies; include required third-party license and notice files.
+- [x] Add a repository license selected by the maintainers.
+- [x] Audit bundled assets and dependencies; include required third-party license and notice files.
 - [ ] Review contribution, issue-reporting, and security-reporting guidance for the public repository.
-- [ ] Confirm maintainer/creator credit and public contact/project links for the About page and README.
+- [x] Confirm maintainer/creator credit and public contact/project links for the About page and README.
 - [ ] Build and inspect native packages on each intended operating system.
 - [ ] Validate TCP setup against the current Android release and document known limitations.
 - [ ] Capture release screenshots and provide concise installation instructions.
 
 ## Follow-up product work
 
-- [ ] Review the Logs navigation entry and either implement it or clearly mark its availability in the UI.
+- [x] Review the Logs navigation entry and either implement it or clearly mark its availability in the UI.
 - [ ] Continue checking responsive layout and text hierarchy on smaller desktop windows.
 - [ ] Keep in-app protocol and sensor references synchronized with the Android runtime.
 - [ ] Improve automated coverage for packet decoding and state transformations as the public release workflow is established.

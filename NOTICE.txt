@@ -1,0 +1,12 @@
+ASR Studio
+
+This product includes software and assets developed by third parties:
+
+1. JetBrains Compose Multiplatform
+   License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)
+
+2. 3D Phone Model (android_phone_ros.obj / .mtl)
+   Please ensure you hold the right to use, modify, and distribute this model.
+
+3. Kotlin Standard Library & Coroutines
+   License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)
