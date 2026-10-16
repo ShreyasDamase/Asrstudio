@@ -25,10 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.LocalCafe
-import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -50,7 +47,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -312,7 +308,7 @@ private fun CoffeeMugArtwork(
 }
 
 private data class SupportBenefit(
-    val icon: ImageVector,
+    val number: String,
     val title: String,
     val description: String,
 )
@@ -321,17 +317,17 @@ private data class SupportBenefit(
 private fun SupportDetails() {
     val benefits = listOf(
         SupportBenefit(
-            icon = Icons.Default.Build,
+            number = "01",
             title = "Supports maintenance",
             description = "Helps keep ASR Studio up to date with fixes and improvements.",
         ),
         SupportBenefit(
-            icon = Icons.Default.FavoriteBorder,
+            number = "02",
             title = "Always optional",
             description = "No features are locked behind contributions.",
         ),
         SupportBenefit(
-            icon = Icons.Default.Security,
+            number = "03",
             title = "Handled externally",
             description = "The link opens in your browser; payments stay outside the app.",
         ),
@@ -404,11 +400,11 @@ private fun SupportDetailCard(
             modifier = Modifier.padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Icon(
-                imageVector = benefit.icon,
-                contentDescription = null,
-                tint = StudioColors.accent,
-                modifier = Modifier.size(24.dp),
+            Text(
+                text = benefit.number,
+                color = StudioColors.accent,
+                fontFamily = StudioFonts.mono,
+                fontWeight = FontWeight.Bold,
             )
             Text(
                 text = benefit.title,
