@@ -147,14 +147,14 @@ private fun SupportHeroCopy(
             )
         }
         Text(
-            "Good tools\nare worth keeping alive.",
+            "Good tools are worth\nkeeping alive.",
             style = MaterialTheme.typography.headlineMedium,
             color = HeroWhite,
             fontWeight = FontWeight.Bold,
             lineHeight = MaterialTheme.typography.headlineMedium.lineHeight,
         )
         Text(
-            "If ASR Studio makes your work easier, your support helps fund maintenance, bug fixes, and future improvements.",
+            "Your support helps fund maintenance, bug fixes, and future improvements to ASR Studio.",
             style = MaterialTheme.typography.bodyMedium,
             color = HeroMuted,
         )
@@ -319,17 +319,17 @@ private fun SupportDetails() {
         SupportBenefit(
             number = "01",
             title = "Supports maintenance",
-            description = "Helps keep ASR Studio up to date with fixes and improvements.",
+            description = "Helps fund maintenance, bug fixes, and future improvements.",
         ),
         SupportBenefit(
             number = "02",
             title = "Always optional",
-            description = "No features are locked behind contributions.",
+            description = "Contributions are voluntary; all features remain available.",
         ),
         SupportBenefit(
             number = "03",
             title = "Handled externally",
-            description = "The link opens in your browser; payments stay outside the app.",
+            description = "The link opens in your browser. Studio never processes payments.",
         ),
     )
 
@@ -413,7 +413,7 @@ private fun SupportDetailCard(
             )
             Text(
                 text = benefit.description,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
