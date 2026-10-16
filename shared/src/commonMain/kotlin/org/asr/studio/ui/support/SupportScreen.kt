@@ -255,16 +255,14 @@ private fun CoffeeMugArtwork(
                 val startY = size.height * (0.37f - progress * 0.14f)
                 val endY = startY - size.height * 0.09f
                 val fade = (1f - kotlin.math.abs(progress * 2f - 1f)) * 0.8f
+                val zigzagWidth = size.width * 0.025f
+                val segmentHeight = (startY - endY) / 4f
                 val vapor = Path().apply {
                     moveTo(startX, startY)
-                    cubicTo(
-                        startX - size.width * 0.035f,
-                        startY - size.height * 0.025f,
-                        startX + size.width * 0.035f,
-                        endY + size.height * 0.025f,
-                        startX,
-                        endY,
-                    )
+                    lineTo(startX + zigzagWidth, startY - segmentHeight)
+                    lineTo(startX - zigzagWidth * 0.7f, startY - segmentHeight * 2f)
+                    lineTo(startX + zigzagWidth * 0.8f, startY - segmentHeight * 3f)
+                    lineTo(startX, endY)
                 }
                 drawPath(
                     path = vapor,
