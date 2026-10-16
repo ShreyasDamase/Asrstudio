@@ -23,9 +23,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.LocalCafe
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -47,6 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -72,7 +76,7 @@ fun SupportScreen() {
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         SupportHero(
             onSupport = { openError = openExternalUrl(BUY_ME_A_COFFEE_URL) },
@@ -95,16 +99,16 @@ private fun SupportHero(onSupport: () -> Unit) {
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp),
+                .padding(20.dp),
         ) {
             val compact = maxWidth < 620.dp
             if (compact) {
-                Column(verticalArrangement = Arrangement.spacedBy(22.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                    SupportHeroCopy(onSupport = onSupport)
                     CoffeeMugArtwork(
                         modifier = Modifier.align(Alignment.CenterHorizontally),
-                        artworkSize = 204.dp,
+                        artworkSize = 176.dp,
                     )
-                    SupportHeroCopy(onSupport = onSupport)
                 }
             } else {
                 Row(
@@ -113,7 +117,7 @@ private fun SupportHero(onSupport: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     SupportHeroCopy(modifier = Modifier.weight(1f), onSupport = onSupport)
-                    CoffeeMugArtwork(artworkSize = 224.dp)
+                    CoffeeMugArtwork(artworkSize = 200.dp)
                 }
             }
         }
@@ -127,7 +131,7 @@ private fun SupportHeroCopy(
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -139,7 +143,7 @@ private fun SupportHeroCopy(
                     .background(StudioColors.accent, RoundedCornerShape(1.dp)),
             )
             Text(
-                "ASR STUDIO  /  COMMUNITY",
+                "ASR STUDIO  /  SUPPORT THE PROJECT",
                 style = MaterialTheme.typography.labelSmall,
                 color = HeroMuted,
                 fontFamily = StudioFonts.mono,
@@ -147,7 +151,7 @@ private fun SupportHeroCopy(
             )
         }
         Text(
-            "Good tools\nare worth\nkeeping alive.",
+            "Good tools\nare worth keeping alive.",
             style = MaterialTheme.typography.headlineMedium,
             color = HeroWhite,
             fontWeight = FontWeight.Bold,
@@ -161,7 +165,7 @@ private fun SupportHeroCopy(
         Button(onClick = onSupport) {
             Icon(Icons.Default.LocalCafe, contentDescription = null)
             Spacer(Modifier.size(10.dp))
-            Text("BUY ME A COFFEE")
+            Text("Buy me a coffee")
             Spacer(Modifier.size(8.dp))
             Icon(
                 Icons.AutoMirrored.Filled.OpenInNew,
@@ -214,7 +218,7 @@ private fun CoffeeMugArtwork(
             .clip(RoundedCornerShape(4.dp))
             .background(Color(0xFF111111))
             .border(1.dp, Color(0xFF292929), RoundedCornerShape(4.dp))
-            .semantics { contentDescription = "Animated Nothing-inspired coffee mug artwork" },
+            .semantics { contentDescription = "Animated ASR Studio coffee mug artwork" },
         contentAlignment = Alignment.Center,
     ) {
         Canvas(
@@ -255,13 +259,14 @@ private fun CoffeeMugArtwork(
                 val startY = size.height * (0.37f - progress * 0.14f)
                 val endY = startY - size.height * 0.09f
                 val fade = (1f - kotlin.math.abs(progress * 2f - 1f)) * 0.8f
-                val zigzagWidth = size.width * 0.025f
-                val segmentHeight = (startY - endY) / 4f
+                val zigzagWidth = size.width * 0.035f
+                val segmentHeight = (startY - endY) / 5f
                 val vapor = Path().apply {
                     moveTo(startX, startY)
                     lineTo(startX + zigzagWidth, startY - segmentHeight)
-                    lineTo(startX - zigzagWidth * 0.7f, startY - segmentHeight * 2f)
-                    lineTo(startX + zigzagWidth * 0.8f, startY - segmentHeight * 3f)
+                    lineTo(startX - zigzagWidth * 0.82f, startY - segmentHeight * 2f)
+                    lineTo(startX + zigzagWidth * 0.72f, startY - segmentHeight * 3f)
+                    lineTo(startX - zigzagWidth * 0.48f, startY - segmentHeight * 4f)
                     lineTo(startX, endY)
                 }
                 drawPath(
@@ -306,55 +311,78 @@ private fun CoffeeMugArtwork(
     }
 }
 
+private data class SupportBenefit(
+    val icon: ImageVector,
+    val title: String,
+    val description: String,
+)
+
 @Composable
 private fun SupportDetails() {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            "WHAT YOUR SUPPORT MEANS",
-            style = MaterialTheme.typography.labelSmall,
-            color = StudioColors.textSecondary,
-            fontFamily = StudioFonts.mono,
-            fontWeight = FontWeight.Bold,
+    val benefits = listOf(
+        SupportBenefit(
+            icon = Icons.Default.Build,
+            title = "Supports maintenance",
+            description = "Helps keep ASR Studio up to date with fixes and improvements.",
+        ),
+        SupportBenefit(
+            icon = Icons.Default.FavoriteBorder,
+            title = "Always optional",
+            description = "No features are locked behind contributions.",
+        ),
+        SupportBenefit(
+            icon = Icons.Default.Security,
+            title = "Handled externally",
+            description = "The link opens in your browser; payments stay outside the app.",
+        ),
+    )
+
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 1.dp)
+                .background(StudioColors.border),
         )
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            if (maxWidth < 620.dp) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    SupportDetailCard(
-                        number = "01",
-                        title = "Maintenance",
-                        description = "Bug fixes and future improvements.",
-                    )
-                    SupportDetailCard(
-                        number = "02",
-                        title = "Always optional",
-                        description = "No features are locked behind support.",
-                    )
-                    SupportDetailCard(
-                        number = "03",
-                        title = "Handled externally",
-                        description = "Contributions are processed outside the app.",
-                    )
+            when {
+                maxWidth >= 720.dp -> {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        benefits.forEach { benefit ->
+                            SupportDetailCard(
+                                modifier = Modifier.weight(1f).heightIn(min = 152.dp),
+                                benefit = benefit,
+                            )
+                        }
+                    }
                 }
-            } else {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    SupportDetailCard(
-                        modifier = Modifier.weight(1f).heightIn(min = 180.dp),
-                        number = "01",
-                        title = "Maintenance",
-                        description = "Bug fixes and future improvements.",
-                    )
-                    SupportDetailCard(
-                        modifier = Modifier.weight(1f).heightIn(min = 180.dp),
-                        number = "02",
-                        title = "Always optional",
-                        description = "No features are locked behind support.",
-                    )
-                    SupportDetailCard(
-                        modifier = Modifier.weight(1f).heightIn(min = 180.dp),
-                        number = "03",
-                        title = "Handled externally",
-                        description = "Contributions are processed outside the app.",
-                    )
+
+                maxWidth >= 480.dp -> {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            benefits.take(2).forEach { benefit ->
+                                SupportDetailCard(
+                                    modifier = Modifier.weight(1f),
+                                    benefit = benefit,
+                                )
+                            }
+                        }
+                        SupportDetailCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            benefit = benefits[2],
+                        )
+                    }
+                }
+
+                else -> {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        benefits.forEach { benefit ->
+                            SupportDetailCard(
+                                modifier = Modifier.fillMaxWidth(),
+                                benefit = benefit,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -364,23 +392,34 @@ private fun SupportDetails() {
 @Composable
 private fun SupportDetailCard(
     modifier: Modifier = Modifier,
-    number: String,
-    title: String,
-    description: String,
+    benefit: SupportBenefit,
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = androidx.compose.foundation.BorderStroke(1.dp, StudioColors.border),
-        shape = RoundedCornerShape(6.dp),
+        shape = RoundedCornerShape(8.dp),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(9.dp),
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text(number, color = StudioColors.accent, fontFamily = StudioFonts.mono, fontWeight = FontWeight.Bold)
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(
+                imageVector = benefit.icon,
+                contentDescription = null,
+                tint = StudioColors.accent,
+                modifier = Modifier.size(24.dp),
+            )
+            Text(
+                text = benefit.title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = benefit.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
