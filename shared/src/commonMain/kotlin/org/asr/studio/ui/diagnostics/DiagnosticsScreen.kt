@@ -13,15 +13,18 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -40,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -78,6 +82,7 @@ private enum class ImuTab(val label: String) {
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 fun DiagnosticsScreen(viewModel: DiagnosticsViewModel) {
     val diag by viewModel.diagnostics.collectAsState()
     val imu by viewModel.imu.collectAsState()
@@ -99,9 +104,10 @@ fun DiagnosticsScreen(viewModel: DiagnosticsViewModel) {
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm),
         ) {
             ImuTab.entries.forEach { tab ->
                 TabPill(
@@ -126,8 +132,9 @@ fun DiagnosticsScreen(viewModel: DiagnosticsViewModel) {
                 rate = "400 Hz",
                 packetRate = diag.packetRate,
                 history = history.map { Triple(it.accelX, it.accelY, it.accelZ) },
-                explanation = "Measures total specific force on the device. At rest the magnitude should sit near local gravity, about 9.81 m/s2.",
-                relation = "Accelerometer equals Gravity plus Linear Acceleration, so it mixes tilt and actual movement.",
+                formula = "|a| = sqrt(ax^2 + ay^2 + az^2)",
+                meaning = "Each axis is acceleration in the phone frame. The magnitude combines all three axes into one reading.",
+                note = "At rest, the reading includes gravity and is usually near 9.81 m/s2. Motion and tilt both affect the axes.",
             )
             ImuTab.Gyroscope -> VectorSensorTab(
                 title = "Gyroscope",
@@ -141,8 +148,9 @@ fun DiagnosticsScreen(viewModel: DiagnosticsViewModel) {
                 rate = "400 Hz",
                 packetRate = diag.packetRate,
                 history = history.map { Triple(it.gyroX, it.gyroY, it.gyroZ) },
-                explanation = "Measures angular velocity around each axis, or how fast the device is spinning right now.",
-                relation = "Integrated over time and fused with accelerometer and magnetometer references, it drives the rotation vector.",
+                formula = "delta_theta ~= omega * delta_t",
+                meaning = "Angular velocity omega is reported per axis in rad/s. Multiplying by a short time interval estimates that axis's angle change in radians.",
+                note = "The rotation vector is fused upstream; gyro integration alone accumulates bias and drift.",
             )
             ImuTab.Gravity -> VectorSensorTab(
                 title = "Gravity",
@@ -156,8 +164,9 @@ fun DiagnosticsScreen(viewModel: DiagnosticsViewModel) {
                 rate = "200 Hz",
                 packetRate = diag.packetRate,
                 history = history.map { Triple(it.gravityX, it.gravityY, it.gravityZ) },
-                explanation = "A fused estimate of gravity alone. It follows device tilt and should remain near 9.81 m/s2 even while the phone moves.",
-                relation = "Accelerometer minus Gravity gives Linear Acceleration.",
+                formula = "|g| = sqrt(gx^2 + gy^2 + gz^2)",
+                meaning = "The three values are the runtime's estimated gravity vector in the phone frame; its direction changes as the phone tilts.",
+                note = "Gravity is supplied by the phone runtime's sensor pipeline. Its exact filter/estimator is implementation-specific.",
             )
             ImuTab.Rotation -> RotationTab(imu)
             ImuTab.Magnetometer -> VectorSensorTab(
@@ -172,8 +181,9 @@ fun DiagnosticsScreen(viewModel: DiagnosticsViewModel) {
                 rate = "50 Hz",
                 packetRate = diag.packetRate,
                 history = history.map { Triple(it.magX, it.magY, it.magZ) },
-                explanation = "Raw magnetic field strength measured by the phone's magnetometer in microtesla (μT). The Earth's field is typically 25–65 μT depending on location.",
-                relation = "Magnetometer readings are fused with accelerometer data to produce stable absolute heading (yaw) in the Rotation Vector. Near metal objects or electronics, readings may be disturbed.",
+                formula = "|B| = sqrt(Bx^2 + By^2 + Bz^2)",
+                meaning = "The axes measure magnetic-field components in microtesla (uT); the magnitude is the total field strength.",
+                note = "A compass heading needs calibration, tilt compensation, and local magnetic-declination correction. Nearby metal can distort readings.",
             )
             ImuTab.LinearAcceleration -> {
                 val lx = (imu?.accelX ?: 0f) - (imu?.gravityX ?: 0f)
@@ -191,8 +201,9 @@ fun DiagnosticsScreen(viewModel: DiagnosticsViewModel) {
                     rate = "200 Hz",
                     packetRate = diag.packetRate,
                     history = history.map { Triple(it.accelX - it.gravityX, it.accelY - it.gravityY, it.accelZ - it.gravityZ) },
-                    explanation = "The device's own acceleration after subtracting gravity. Near zero means the phone is still; spikes mean real motion, impact, or vibration.",
-                    relation = "Linear Acceleration equals Accelerometer minus Gravity.",
+                    formula = "a_linear = a_accel - g",
+                    meaning = "Subtract the estimated gravity component on each axis from the accelerometer reading to isolate device motion.",
+                    note = "Near zero suggests little linear movement; vibration, impacts, and estimator lag can still produce residuals.",
                 )
             }
         }
@@ -209,9 +220,10 @@ private fun ImuOverview(
     history: List<ImuData>
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm),
         ) {
             SensorChip("Accelerometer", "400 Hz", imu != null, Modifier.width(150.dp))
             SensorChip("Gyroscope", "400 Hz", imu != null, Modifier.width(150.dp))
@@ -478,8 +490,9 @@ private fun VectorSensorTab(
     rate: String,
     packetRate: Double,
     history: List<Triple<Float, Float, Float>>,
-    explanation: String,
-    relation: String,
+    formula: String,
+    meaning: String,
+    note: String,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
@@ -532,10 +545,37 @@ private fun VectorSensorTab(
             }
             val chartCard: @Composable (Modifier) -> Unit = { cardModifier ->
                 DiagnosticsCard(modifier = cardModifier) {
-                    Text("Time Series", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(14.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Signal trace", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.width(10.dp))
+                        Badge("${history.size} SAMPLES")
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Each trace shows one axis over recent packets; latest sample is marked at the right.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text("+${range.toInt()} $unit", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("0", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                        Text("-${range.toInt()} $unit", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Spacer(Modifier.height(StudioSpacing.xs))
                     TimeSeriesCanvas(history, range, Modifier.fillMaxWidth().height(210.dp))
-                    AxisLegend(endLabel = "range +/-${range.toInt()} $unit")
+                    AxisLegend(endLabel = "UNIT $unit", latest = history.lastOrNull())
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text("OLDER", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("NOW", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
             if (compact) {
@@ -550,50 +590,100 @@ private fun VectorSensorTab(
                 }
             }
         }
-        DiagnosticsCard {
-            Text("What This Measures", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(10.dp))
-            Text(explanation, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
-            Spacer(Modifier.height(8.dp))
-            Text(relation, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
-        }
+        SignalFormulaCard(
+            formula = formula,
+            meaning = meaning,
+            note = note,
+        )
     }
 }
 
 @Composable
 private fun RotationTab(imu: ImuData?) {
     Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-            DiagnosticsCard(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Orientation", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.width(10.dp))
-                    Badge("FUSION OUTPUT")
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val compact = maxWidth < 880.dp
+            val orientationCard: @Composable (Modifier) -> Unit = { modifier ->
+                DiagnosticsCard(modifier = modifier) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Orientation", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.width(10.dp))
+                        Badge("FUSION OUTPUT")
+                    }
+                    Spacer(Modifier.height(14.dp))
+                    OrientationCanvas(imu, modifier = Modifier.fillMaxWidth().height(if (compact) 340.dp else 430.dp))
                 }
-                Spacer(Modifier.height(14.dp))
-                OrientationCanvas(imu, modifier = Modifier.fillMaxWidth().height(430.dp))
             }
-            DiagnosticsCard(modifier = Modifier.weight(1f)) {
-                Text("Phone Pose", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(14.dp))
-                PhonePosePanel(imu)
-                Spacer(Modifier.height(18.dp))
-                Text("Quaternion Components", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(16.dp))
-                QuaternionBar("W", imu?.rotW ?: 1f, StudioColors.quaternionW)
-                QuaternionBar("X", imu?.rotX ?: 0f, AxisX)
-                QuaternionBar("Y", imu?.rotY ?: 0f, AxisY)
-                QuaternionBar("Z", imu?.rotZ ?: 0f, AxisZ)
-                Spacer(Modifier.height(18.dp))
-                EulerCards(imu)
-                Spacer(Modifier.height(18.dp))
-                Text(
-                    "A unit quaternion describes device orientation relative to the world frame. The pitch, roll, and yaw cards are a readable conversion of the same fused signal.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
+            val poseCard: @Composable (Modifier) -> Unit = { modifier ->
+                DiagnosticsCard(modifier = modifier) {
+                    Text("Phone Pose", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(14.dp))
+                    PhonePosePanel(imu)
+                    Spacer(Modifier.height(18.dp))
+                    Text("Quaternion Components", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(16.dp))
+                    QuaternionBar("W", imu?.rotW ?: 1f, StudioColors.quaternionW)
+                    QuaternionBar("X", imu?.rotX ?: 0f, AxisX)
+                    QuaternionBar("Y", imu?.rotY ?: 0f, AxisY)
+                    QuaternionBar("Z", imu?.rotZ ?: 0f, AxisZ)
+                    Spacer(Modifier.height(18.dp))
+                    EulerCards(imu)
+                    Spacer(Modifier.height(18.dp))
+                    Text(
+                        "A unit quaternion describes device orientation relative to the world frame. The pitch, roll, and yaw cards are a readable conversion of the same fused signal.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Spacer(Modifier.height(14.dp))
+                    SignalFormulaCard(
+                        formula = "q = (w, x, y, z); w^2 + x^2 + y^2 + z^2 ~= 1",
+                        meaning = "The received unit quaternion encodes 3D orientation. ASR Studio converts it to Euler angles for display.",
+                        note = "Roll = atan2(2(wx + yz), 1 - 2(x^2 + y^2)); pitch = asin(clamp(2(wy - zx), -1, 1)); yaw = atan2(2(wz + xy), 1 - 2(y^2 + z^2)). Fusion is performed upstream.",
+                    )
+                }
+            }
+            if (compact) {
+                Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                    orientationCard(Modifier.fillMaxWidth())
+                    poseCard(Modifier.fillMaxWidth())
+                }
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                    orientationCard(Modifier.weight(1f))
+                    poseCard(Modifier.weight(1f))
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun SignalFormulaCard(
+    formula: String,
+    meaning: String,
+    note: String,
+) {
+    DiagnosticsCard {
+        Text("Signal notes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(StudioSpacing.md))
+        Text("FORMULA", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(StudioSpacing.xs))
+        Text(
+            formula,
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(StudioColors.canvas, StudioRadii.controlShape)
+                .padding(horizontal = StudioSpacing.md, vertical = StudioSpacing.sm),
+            fontFamily = StudioFonts.mono,
+            color = MaterialTheme.colorScheme.primary,
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Spacer(Modifier.height(StudioSpacing.md))
+        Text("HOW TO READ IT", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(StudioSpacing.xs))
+        Text(meaning, style = MaterialTheme.typography.bodyMedium)
+        Spacer(Modifier.height(StudioSpacing.sm))
+        Text(note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -613,7 +703,8 @@ private fun TabPill(label: String, selected: Boolean, onClick: () -> Unit) {
     val color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
     Row(
         modifier = Modifier
-            .height(38.dp)
+            .heightIn(min = 38.dp)
+            .widthIn(max = 180.dp)
             .background(
                 if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
                 StudioRadii.controlShape,
@@ -623,7 +714,13 @@ private fun TabPill(label: String, selected: Boolean, onClick: () -> Unit) {
             .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, color = color, fontWeight = FontWeight.SemiBold, fontSize = StudioTypeSize.controlLabel)
+        Text(
+            label,
+            color = color,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = StudioTypeSize.controlLabel,
+            maxLines = 2,
+        )
     }
 }
 
@@ -661,13 +758,20 @@ private fun AxisBar(label: String, value: Float, range: Float, color: Color) {
     val borderColor = StudioColors.borderStrong
     Row(modifier = Modifier.fillMaxWidth().height(30.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(label, modifier = Modifier.width(24.dp), color = color, fontWeight = FontWeight.Bold)
-        Canvas(modifier = Modifier.weight(1f).height(16.dp)) {
+        Canvas(modifier = Modifier.weight(1f).height(18.dp)) {
             val centerX = size.width / 2f
-            drawRoundRect(canvasColor, size = size, cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f))
-            drawLine(borderColor, Offset(centerX, 0f), Offset(centerX, size.height), strokeWidth = 1.2f)
+            drawRect(canvasColor, size = size)
+            drawRect(borderColor, size = size, style = Stroke(width = 1f))
+            drawLine(borderColor, Offset(centerX, 0f), Offset(centerX, size.height), strokeWidth = 1.2f, cap = StrokeCap.Butt)
             val clamped = value.coerceIn(-range, range)
             val end = centerX + (clamped / range) * centerX
-            drawLine(color, Offset(centerX, size.height / 2f), Offset(end, size.height / 2f), strokeWidth = size.height, cap = StrokeCap.Round)
+            val fillWidth = max(4f, abs(end - centerX))
+            val fillStart = if (abs(end - centerX) < 4f) centerX - 2f else min(end, centerX)
+            drawRect(
+                color = color,
+                topLeft = Offset(fillStart, 3f),
+                size = Size(fillWidth, size.height - 6f),
+            )
         }
         Text(formatNumber(value), modifier = Modifier.width(82.dp), fontFamily = StudioFonts.mono, fontWeight = FontWeight.SemiBold)
     }
@@ -681,10 +785,17 @@ private fun QuaternionBar(label: String, value: Float, color: Color) {
         Text(label, modifier = Modifier.width(26.dp), color = color, fontWeight = FontWeight.Bold)
         Canvas(modifier = Modifier.weight(1f).height(15.dp)) {
             val centerX = size.width / 2f
-            drawRoundRect(canvasColor, size = size, cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f))
-            drawLine(borderColor, Offset(centerX, 0f), Offset(centerX, size.height), strokeWidth = 1.1f)
+            drawRect(canvasColor, size = size)
+            drawRect(borderColor, size = size, style = Stroke(width = 1f))
+            drawLine(borderColor, Offset(centerX, 0f), Offset(centerX, size.height), strokeWidth = 1.1f, cap = StrokeCap.Butt)
             val end = centerX + value.coerceIn(-1f, 1f) * centerX
-            drawLine(color, Offset(centerX, size.height / 2f), Offset(end, size.height / 2f), strokeWidth = size.height, cap = StrokeCap.Round)
+            val fillWidth = max(4f, abs(end - centerX))
+            val fillStart = if (abs(end - centerX) < 4f) centerX - 2f else min(end, centerX)
+            drawRect(
+                color = color,
+                topLeft = Offset(fillStart, 2f),
+                size = Size(fillWidth, size.height - 4f),
+            )
         }
         Text(formatNumber(value), modifier = Modifier.width(70.dp), fontFamily = StudioFonts.mono, fontWeight = FontWeight.SemiBold)
     }
@@ -699,23 +810,51 @@ private fun TimeSeriesCanvas(values: List<Triple<Float, Float, Float>>, range: F
         val top = pad
         val width = size.width - pad * 2f
         val height = size.height - pad * 2f
-        repeat(3) { i ->
-            val y = top + height * (i + 1) / 4f
-            drawLine(gridColor, Offset(left, y), Offset(left + width, y), strokeWidth = 1f)
+        for (i in 0..4) {
+            val y = top + height * i / 4f
+            val isZero = i == 2
+            drawLine(
+                color = if (isZero) StudioColors.accent.copy(alpha = 0.5f) else gridColor,
+                start = Offset(left, y),
+                end = Offset(left + width, y),
+                strokeWidth = if (isZero) 1.5f else 1f,
+                cap = StrokeCap.Butt,
+            )
         }
-        fun drawSeries(points: List<Float>, color: Color) {
-            if (points.size < 2) return
+        for (i in 0..4) {
+            val x = left + width * i / 4f
+            drawLine(gridColor.copy(alpha = 0.55f), Offset(x, top), Offset(x, top + height), strokeWidth = 1f, cap = StrokeCap.Butt)
+        }
+        fun drawSeries(axis: Int, color: Color) {
+            if (values.size < 2) return
             val path = Path()
-            points.forEachIndexed { index, value ->
-                val x = left + width * index / max(1, points.lastIndex)
+            values.forEachIndexed { index, sample ->
+                val value = when (axis) {
+                    0 -> sample.first
+                    1 -> sample.second
+                    else -> sample.third
+                }
+                val x = left + width * index / max(1, values.lastIndex)
                 val y = top + height / 2f - (value.coerceIn(-range, range) / range) * (height / 2f)
                 if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
             }
-            drawPath(path, color, style = Stroke(width = 2.3f, cap = StrokeCap.Round))
+            drawPath(path, color, style = Stroke(width = 2f, cap = StrokeCap.Butt))
+            val latest = when (axis) {
+                0 -> values.last().first
+                1 -> values.last().second
+                else -> values.last().third
+            }.coerceIn(-range, range)
+            val markerX = left + width
+            val markerY = top + height / 2f - (latest / range) * (height / 2f)
+            drawRect(
+                color = color,
+                topLeft = Offset(markerX - 4f, markerY - 4f),
+                size = Size(8f, 8f),
+            )
         }
-        drawSeries(values.map { it.first }, AxisX)
-        drawSeries(values.map { it.second }, AxisY)
-        drawSeries(values.map { it.third }, AxisZ)
+        drawSeries(0, AxisX)
+        drawSeries(1, AxisY)
+        drawSeries(2, AxisZ)
     }
 }
 
@@ -725,22 +864,53 @@ private fun OrientationCanvas(imu: ImuData?, modifier: Modifier) {
 }
 
 @Composable
-private fun AxisLegend(endLabel: String = "") {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
-        LegendItem("X", AxisX)
-        LegendItem("Y", AxisY)
-        LegendItem("Z", AxisZ)
-        Spacer(Modifier.weight(1f))
-        if (endLabel.isNotBlank()) Text(endLabel, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+private fun AxisLegend(endLabel: String = "", latest: Triple<Float, Float, Float>? = null) {
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
+        val firstRow: @Composable () -> Unit = {
+            LegendItem("X", AxisX, latest?.first)
+            LegendItem("Y", AxisY, latest?.second)
+            LegendItem("Z", AxisZ, latest?.third)
+        }
+        if (maxWidth < 440.dp) {
+            Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.xs)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    firstRow()
+                }
+                if (endLabel.isNotBlank()) {
+                    Text(endLabel, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm),
+            ) {
+                firstRow()
+                Spacer(Modifier.weight(1f))
+                if (endLabel.isNotBlank()) Text(endLabel, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            }
+        }
     }
 }
 
 @Composable
-private fun LegendItem(label: String, color: Color) {
+private fun LegendItem(label: String, color: Color, value: Float? = null) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 14.dp)) {
-        Box(Modifier.size(10.dp).background(color, MaterialTheme.shapes.medium))
+        Box(Modifier.size(8.dp).background(color, StudioRadii.controlShape))
         Spacer(Modifier.width(5.dp))
-        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+        Text(
+            if (value == null) label else "$label ${formatNumber(value)}",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodySmall,
+            fontFamily = if (value == null) MaterialTheme.typography.bodySmall.fontFamily else StudioFonts.mono,
+            maxLines = 1,
+            softWrap = false,
+        )
     }
 }
 
@@ -770,11 +940,22 @@ private fun MiniHistoryStrip(history: List<ImuData>) {
         Text("No IMU packets received yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         return
     }
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
         val last = history.last()
-        VectorSummary("Accelerometer", "RAW", last.accelX, last.accelY, last.accelZ, Modifier.weight(1f))
-        VectorSummary("Gyroscope", "RAW", last.gyroX, last.gyroY, last.gyroZ, Modifier.weight(1f))
-        VectorSummary("Gravity", "DERIVED", last.gravityX, last.gravityY, last.gravityZ, Modifier.weight(1f))
+        val summaries: List<@Composable (Modifier) -> Unit> = listOf(
+            { modifier -> VectorSummary("Accelerometer", "RAW", last.accelX, last.accelY, last.accelZ, modifier) },
+            { modifier -> VectorSummary("Gyroscope", "RAW", last.gyroX, last.gyroY, last.gyroZ, modifier) },
+            { modifier -> VectorSummary("Gravity", "DERIVED", last.gravityX, last.gravityY, last.gravityZ, modifier) },
+        )
+        if (maxWidth < 760.dp) {
+            Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
+                summaries.forEach { summary -> summary(Modifier.fillMaxWidth()) }
+            }
+        } else {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(StudioSpacing.md)) {
+                summaries.forEach { summary -> summary(Modifier.weight(1f)) }
+            }
+        }
     }
 }
 
@@ -796,10 +977,21 @@ private fun PhonePosePanel(imu: ImuData?, modifier: Modifier = Modifier) {
         Spacer(Modifier.height(6.dp))
         Text(pose.detail, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
         Spacer(Modifier.height(12.dp))
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            PoseMetric("Flat tilt", "${"%.0f".format(pose.flatTiltDeg)} deg", Modifier.weight(1f))
-            PoseMetric("Vertical tilt", "${"%.0f".format(pose.verticalTiltDeg)} deg", Modifier.weight(1f))
-            PoseMetric("Dominant axis", pose.axisLabel, Modifier.weight(1f))
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val metrics: List<@Composable (Modifier) -> Unit> = listOf(
+                { metricModifier -> PoseMetric("Flat tilt", "${"%.0f".format(pose.flatTiltDeg)} deg", metricModifier) },
+                { metricModifier -> PoseMetric("Vertical tilt", "${"%.0f".format(pose.verticalTiltDeg)} deg", metricModifier) },
+                { metricModifier -> PoseMetric("Dominant axis", pose.axisLabel, metricModifier) },
+            )
+            if (maxWidth < 420.dp) {
+                Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
+                    metrics.forEach { metric -> metric(Modifier.fillMaxWidth()) }
+                }
+            } else {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
+                    metrics.forEach { metric -> metric(Modifier.weight(1f)) }
+                }
+            }
         }
     }
 }
@@ -829,10 +1021,21 @@ private fun PoseMetric(label: String, value: String, modifier: Modifier = Modifi
 @Composable
 private fun EulerCards(imu: ImuData?) {
     val euler = imu.toEuler()
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        AngleCard("Pitch · X", euler.pitchDeg, AxisX, Modifier.weight(1f))
-        AngleCard("Roll · Y", euler.rollDeg, AxisY, Modifier.weight(1f))
-        AngleCard("Yaw · Z", euler.yawDeg, AxisZ, Modifier.weight(1f))
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val angles: List<@Composable (Modifier) -> Unit> = listOf(
+            { modifier -> AngleCard("Pitch · X", euler.pitchDeg, AxisX, modifier) },
+            { modifier -> AngleCard("Roll · Y", euler.rollDeg, AxisY, modifier) },
+            { modifier -> AngleCard("Yaw · Z", euler.yawDeg, AxisZ, modifier) },
+        )
+        if (maxWidth < 460.dp) {
+            Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
+                angles.forEach { angle -> angle(Modifier.fillMaxWidth()) }
+            }
+        } else {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
+                angles.forEach { angle -> angle(Modifier.weight(1f)) }
+            }
+        }
     }
 }
 

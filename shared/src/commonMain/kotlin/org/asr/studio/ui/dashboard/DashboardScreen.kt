@@ -107,7 +107,11 @@ fun DashboardScreen(
         }
 
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val twoColumnLayout = maxWidth < 720.dp
+            val columns = when {
+                maxWidth < 520.dp -> 1
+                maxWidth < 1120.dp -> 2
+                else -> 4
+            }
             val batteryLevel = battery?.level ?: 0f
             val batteryColor = when {
                 batteryLevel > 50f -> StudioColors.success
@@ -133,11 +137,11 @@ fun DashboardScreen(
                 },
                 { modifier ->
                     HealthCard(
-                    title = "Battery temp",
-                    value = if (battery != null) "${"%.1f".format(tempC)}°C" else "--",
-                    subtitle = if (tempC > 42f) "High Thermal Load — stop unused modules" else "Optimal thermal range",
-                    valueColor = tempColor,
-                    modifier = modifier,
+                        title = "Battery temp",
+                        value = if (battery != null) "${"%.1f".format(tempC)}°C" else "--",
+                        subtitle = if (tempC > 42f) "High Thermal Load — stop unused modules" else "Optimal thermal range",
+                        valueColor = tempColor,
+                        modifier = modifier,
                     )
                 },
                 { modifier ->
@@ -164,23 +168,15 @@ fun DashboardScreen(
                 },
             )
 
-            if (twoColumnLayout) {
-                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    healthCards.chunked(2).forEach { rowCards ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
-                            horizontalArrangement = Arrangement.spacedBy(14.dp),
-                        ) {
-                            rowCards.forEach { card -> card(Modifier.weight(1f).fillMaxHeight()) }
-                        }
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                healthCards.chunked(columns).forEach { rowCards ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    ) {
+                        rowCards.forEach { card -> card(Modifier.weight(1f).fillMaxHeight()) }
+                        repeat(columns - rowCards.size) { Spacer(Modifier.weight(1f)) }
                     }
-                }
-            } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp),
-                ) {
-                    healthCards.forEach { card -> card(Modifier.weight(1f).fillMaxHeight()) }
                 }
             }
         }
@@ -197,25 +193,40 @@ fun DashboardScreen(
                         Text("Sensor modules", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         Text("Control phone sensors independently.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
-                        OutlinedButton(
-                            onClick = { toggleAll(true) },
-                            modifier = Modifier.weight(1f),
-                            shape = StudioRadii.controlShape,
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
-                            contentPadding = PaddingValues(horizontal = StudioSpacing.md, vertical = StudioSpacing.xs),
-                        ) {
-                            Text("ENABLE ALL", fontWeight = FontWeight.Medium, fontSize = StudioTypeSize.controlLabel, maxLines = 1, softWrap = false)
-                        }
-
-                        OutlinedButton(
-                            onClick = { toggleAll(false) },
-                            modifier = Modifier.weight(1f),
-                            shape = StudioRadii.controlShape,
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
-                            contentPadding = PaddingValues(horizontal = StudioSpacing.md, vertical = StudioSpacing.xs),
-                        ) {
-                            Text("DISABLE ALL", fontWeight = FontWeight.Medium, fontSize = StudioTypeSize.controlLabel, maxLines = 1, softWrap = false)
+                    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                        val narrow = maxWidth < 460.dp
+                        val actions: List<@Composable (Modifier) -> Unit> = listOf(
+                            { modifier ->
+                                OutlinedButton(
+                                    onClick = { toggleAll(true) },
+                                    modifier = modifier,
+                                    shape = StudioRadii.controlShape,
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+                                    contentPadding = PaddingValues(horizontal = StudioSpacing.md, vertical = StudioSpacing.xs),
+                                ) {
+                                    Text("ENABLE ALL", fontWeight = FontWeight.Medium, fontSize = StudioTypeSize.controlLabel, maxLines = 1, softWrap = false)
+                                }
+                            },
+                            { modifier ->
+                                OutlinedButton(
+                                    onClick = { toggleAll(false) },
+                                    modifier = modifier,
+                                    shape = StudioRadii.controlShape,
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
+                                    contentPadding = PaddingValues(horizontal = StudioSpacing.md, vertical = StudioSpacing.xs),
+                                ) {
+                                    Text("DISABLE ALL", fontWeight = FontWeight.Medium, fontSize = StudioTypeSize.controlLabel, maxLines = 1, softWrap = false)
+                                }
+                            },
+                        )
+                        if (narrow) {
+                            Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
+                                actions.forEach { action -> action(Modifier.fillMaxWidth()) }
+                            }
+                        } else {
+                            Row(horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
+                                actions.forEach { action -> action(Modifier.weight(1f)) }
+                            }
                         }
                     }
                 }

@@ -15,6 +15,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.DarkMode
@@ -167,40 +173,132 @@ fun App() {
         var selectedScreen by remember { mutableStateOf(AppScreen.Dashboard) }
 
         Surface(modifier = Modifier.fillMaxSize()) {
-            Row(modifier = Modifier.fillMaxSize()) {
-                Sidebar(
-                    selectedScreen = selectedScreen,
-                    onScreenSelected = { selectedScreen = it },
-                )
-                VerticalDivider(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .width(1.dp),
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                )
-                Column(modifier = Modifier.fillMaxSize()) {
-                    TitleBar(
-                        screen = selectedScreen,
-                        studioService = studioService,
-                        darkTheme = darkTheme,
-                        onThemeToggle = {
-                            darkTheme = !darkTheme
-                            saveStudioThemePreference(darkTheme)
-                        },
+            BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                val compact = maxWidth < 900.dp
+                val shortWindow = maxHeight < 520.dp
+                val iconOnlyNavigation = maxWidth < 560.dp
+                if (compact) {
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        CompactNavigationBar(
+                            selectedScreen = selectedScreen,
+                            onScreenSelected = { selectedScreen = it },
+                            iconOnly = iconOnlyNavigation,
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        TitleBar(
+                            screen = selectedScreen,
+                            studioService = studioService,
+                            darkTheme = darkTheme,
+                            compact = true,
+                            onThemeToggle = {
+                                darkTheme = !darkTheme
+                                saveStudioThemePreference(darkTheme)
+                            },
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        ScreenContent(
+                            screen = selectedScreen,
+                            devicesViewModel = devicesViewModel,
+                            diagnosticsViewModel = diagnosticsViewModel,
+                            inspectorViewModel = inspectorViewModel,
+                            cameraViewModel = cameraViewModel,
+                            speakerViewModel = speakerViewModel,
+                            studioService = studioService,
+                            modifier = Modifier.weight(1f).fillMaxWidth(),
+                        )
+                        if (!shortWindow) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                            StatusBar(studioService = studioService, compact = true)
+                        }
+                    }
+                } else {
+                    Row(modifier = Modifier.fillMaxSize()) {
+                        Sidebar(
+                            selectedScreen = selectedScreen,
+                            onScreenSelected = { selectedScreen = it },
+                        )
+                        VerticalDivider(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .width(1.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant,
+                        )
+                        Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            TitleBar(
+                                screen = selectedScreen,
+                                studioService = studioService,
+                                darkTheme = darkTheme,
+                                onThemeToggle = {
+                                    darkTheme = !darkTheme
+                                    saveStudioThemePreference(darkTheme)
+                                },
+                            )
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                            ScreenContent(
+                                screen = selectedScreen,
+                                devicesViewModel = devicesViewModel,
+                                diagnosticsViewModel = diagnosticsViewModel,
+                                inspectorViewModel = inspectorViewModel,
+                                cameraViewModel = cameraViewModel,
+                                speakerViewModel = speakerViewModel,
+                                studioService = studioService,
+                                modifier = Modifier.weight(1f),
+                            )
+                            if (!shortWindow) {
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                                StatusBar(studioService = studioService)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+@OptIn(ExperimentalLayoutApi::class)
+private fun CompactNavigationBar(
+    selectedScreen: AppScreen,
+    onScreenSelected: (AppScreen) -> Unit,
+    iconOnly: Boolean,
+) {
+    FlowRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = StudioSpacing.sm, vertical = StudioSpacing.xs),
+        horizontalArrangement = Arrangement.spacedBy(StudioSpacing.xs),
+        verticalArrangement = Arrangement.spacedBy(StudioSpacing.xxs),
+    ) {
+        AppScreen.entries.forEach { screen ->
+            val selected = screen == selectedScreen
+            Row(
+                modifier = Modifier
+                    .height(36.dp)
+                    .background(
+                        if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                        MaterialTheme.shapes.small,
                     )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    ScreenContent(
-                        screen = selectedScreen,
-                        devicesViewModel = devicesViewModel,
-                        diagnosticsViewModel = diagnosticsViewModel,
-                        inspectorViewModel = inspectorViewModel,
-                        cameraViewModel = cameraViewModel,
-                        speakerViewModel = speakerViewModel,
-                        studioService = studioService,
-                        modifier = Modifier.weight(1f),
+                    .clickable { onScreenSelected(screen) }
+                    .padding(horizontal = StudioSpacing.sm),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(StudioSpacing.xs),
+            ) {
+                Icon(
+                    imageVector = screen.icon,
+                    contentDescription = if (iconOnly) screen.label else null,
+                    modifier = Modifier.size(StudioIconSize.small),
+                    tint = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (!iconOnly) {
+                    Text(
+                        text = screen.label.uppercase(),
+                        color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                        maxLines = 1,
+                        softWrap = false,
                     )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    StatusBar(studioService = studioService)
                 }
             }
         }
@@ -217,6 +315,7 @@ private fun Sidebar(
             .width(220.dp)
             .fillMaxHeight()
             .background(MaterialTheme.colorScheme.surface)
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = StudioSpacing.md, vertical = StudioSpacing.lg),
     ) {
         Text(
@@ -295,6 +394,7 @@ private fun TitleBar(
     screen: AppScreen,
     studioService: StudioService,
     darkTheme: Boolean,
+    compact: Boolean = false,
     onThemeToggle: () -> Unit,
 ) {
     val connectionState by studioService.tcpClient.connectionState.collectAsState()
@@ -302,50 +402,49 @@ private fun TitleBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(64.dp)
+            .height(if (compact) 56.dp else 64.dp)
             .background(MaterialTheme.colorScheme.surface)
-            .padding(horizontal = StudioSpacing.page),
+            .padding(horizontal = if (compact) StudioSpacing.md else StudioSpacing.page),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(StudioSpacing.md),
+        horizontalArrangement = Arrangement.spacedBy(if (compact) StudioSpacing.sm else StudioSpacing.md),
     ) {
-    Column(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = screen.title,
-                style = MaterialTheme.typography.titleLarge,
+                style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = screen.description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-        }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm),
-        ) {
-            Text(
-                text = "TCP · " + when (connectionState) {
-                    org.asr.studio.protocol.ConnectionState.Connected -> "CONNECTED"
-                    org.asr.studio.protocol.ConnectionState.Connecting -> "CONNECTING"
-                    else -> "DISCONNECTED"
-                },
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.widthIn(max = 150.dp),
-            )
-            IconButton(onClick = onThemeToggle) {
-                Icon(
-                    imageVector = if (darkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
-                    contentDescription = if (darkTheme) "Switch to light theme" else "Switch to dark theme",
-                    tint = MaterialTheme.colorScheme.onSurface,
+            if (!compact) {
+                Text(
+                    text = screen.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
+        }
+        Text(
+            text = when (connectionState) {
+                org.asr.studio.protocol.ConnectionState.Connected -> if (compact) "CONNECTED" else "TCP · CONNECTED"
+                org.asr.studio.protocol.ConnectionState.Connecting -> if (compact) "CONNECTING" else "TCP · CONNECTING"
+                else -> if (compact) "OFFLINE" else "TCP · DISCONNECTED"
+            },
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.widthIn(max = if (compact) 90.dp else 150.dp),
+        )
+        IconButton(onClick = onThemeToggle) {
+            Icon(
+                imageVector = if (darkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+                contentDescription = if (darkTheme) "Switch to light theme" else "Switch to dark theme",
+                tint = MaterialTheme.colorScheme.onSurface,
+            )
         }
     }
 }
@@ -422,7 +521,7 @@ private fun PlaceholderContent(screen: AppScreen) {
 }
 
 @Composable
-private fun StatusBar(studioService: StudioService) {
+private fun StatusBar(studioService: StudioService, compact: Boolean = false) {
     val diag by studioService.packetRepository.diagnostics.collectAsState()
 
     Row(
@@ -430,9 +529,10 @@ private fun StatusBar(studioService: StudioService) {
             .fillMaxWidth()
             .height(36.dp)
             .background(MaterialTheme.colorScheme.surface)
-            .padding(horizontal = 24.dp),
+            .then(if (compact) Modifier.horizontalScroll(rememberScrollState()) else Modifier)
+            .padding(horizontal = if (compact) StudioSpacing.md else StudioSpacing.page),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(24.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (compact) StudioSpacing.md else 24.dp),
     ) {
         StatusItem(label = "Transport", value = "TCP")
         StatusItem(label = "Packets", value = diag.totalPackets.toString())

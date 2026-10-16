@@ -317,17 +317,35 @@ private fun SpeedStrip(history: List<GpsData>, modifier: Modifier) {
 
 @Composable
 private fun HealthRow(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, fontWeight = FontWeight.SemiBold)
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
+        if (maxWidth < 380.dp) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(value, fontWeight = FontWeight.SemiBold)
+            }
+        } else {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(value, fontWeight = FontWeight.SemiBold)
+            }
+        }
     }
 }
 
 @Composable
 private fun ReadoutRow(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, fontFamily = StudioFonts.mono, fontWeight = FontWeight.SemiBold)
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        if (maxWidth < 380.dp) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(value, fontFamily = StudioFonts.mono, fontWeight = FontWeight.SemiBold)
+            }
+        } else {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(value, fontFamily = StudioFonts.mono, fontWeight = FontWeight.SemiBold)
+            }
+        }
     }
 }
 

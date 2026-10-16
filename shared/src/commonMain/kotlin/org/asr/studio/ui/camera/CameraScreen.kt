@@ -29,34 +29,50 @@ fun CameraScreen(viewModel: CameraViewModel) {
     var flashlightOn by remember { mutableStateOf(false) }
     var brightness by remember { mutableStateOf(1.0f) }
 
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        when (val state = uiState) {
-            is CameraUiState.WaitingForRuntime -> {
-                Text("Waiting for Runtime...", style = MaterialTheme.typography.bodyLarge)
-            }
-            is CameraUiState.WaitingForPackets -> {
-                Text("Connected: Waiting for camera packets...", style = MaterialTheme.typography.bodyLarge)
-            }
-            is CameraUiState.Streaming -> {
-                CameraView(state.frame)
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val stackLightingPanel = maxWidth < 620.dp || maxHeight < 520.dp
+        val cameraFeed: @Composable (Modifier) -> Unit = { feedModifier ->
+            Box(modifier = feedModifier, contentAlignment = Alignment.Center) {
+                when (val state = uiState) {
+                    is CameraUiState.WaitingForRuntime -> {
+                        Text("Waiting for Runtime...", style = MaterialTheme.typography.bodyLarge)
+                    }
+                    is CameraUiState.WaitingForPackets -> {
+                        Text("Connected: Waiting for camera packets...", style = MaterialTheme.typography.bodyLarge)
+                    }
+                    is CameraUiState.Streaming -> {
+                        CameraView(state.frame)
+                    }
+                }
             }
         }
-
-        // Lighting Panel — always visible (even while waiting, so user can pre-arm flashlight)
-        LightingPanel(
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-            lightSensor = lightSensor,
-            flashlightOn = flashlightOn,
-            brightness = brightness,
-            onToggleFlashlight = {
-                flashlightOn = !flashlightOn
-                viewModel.toggleFlashlight()
-            },
-            onBrightnessChange = { level ->
-                brightness = level
-                viewModel.setFlashlightBrightness(level)
+        val lightingPanel: @Composable (Modifier) -> Unit = { panelModifier ->
+            LightingPanel(
+                modifier = panelModifier,
+                lightSensor = lightSensor,
+                flashlightOn = flashlightOn,
+                brightness = brightness,
+                onToggleFlashlight = {
+                    flashlightOn = !flashlightOn
+                    viewModel.toggleFlashlight()
+                },
+                onBrightnessChange = { level ->
+                    brightness = level
+                    viewModel.setFlashlightBrightness(level)
+                }
+            )
+        }
+        if (stackLightingPanel) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                cameraFeed(Modifier.weight(1f).fillMaxWidth())
+                lightingPanel(Modifier.fillMaxWidth().padding(12.dp))
             }
-        )
+        } else {
+            Box(modifier = Modifier.fillMaxSize()) {
+                cameraFeed(Modifier.fillMaxSize())
+                lightingPanel(Modifier.align(Alignment.BottomEnd).padding(16.dp))
+            }
+        }
     }
 }
 

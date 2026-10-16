@@ -12,6 +12,7 @@ ASR Studio's TCP connection and ROS 2 DDS are different paths. The desktop appli
 - Audio, speaker, GPS, device, and protocol diagnostics.
 - In-app guides for setup, connectivity, sensors, and ROS 2 topics.
 - Dark and light themes with a saved appearance preference.
+- Adaptive layouts reflow navigation, diagnostics, and documentation controls for narrow or short windows.
 
 ## Downloads
 

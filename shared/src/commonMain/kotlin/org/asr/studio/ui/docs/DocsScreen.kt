@@ -3,21 +3,23 @@ package org.asr.studio.ui.docs
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.asr.studio.ui.theme.StudioColors
@@ -38,6 +40,7 @@ private enum class DocSection(
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 fun DocsScreen() {
     var selectedSection by remember { mutableStateOf(DocSection.GettingStarted) }
 
@@ -47,51 +50,48 @@ fun DocsScreen() {
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
-        // ── Professional Tab Row ─────────────────────────────────────────────
-        ScrollableTabRow(
-            selectedTabIndex = selectedSection.ordinal,
-            edgePadding = 0.dp,
-            containerColor = StudioColors.panelRaised,
-            contentColor = StudioColors.accent,
-            indicator = { tabPositions ->
-                if (selectedSection.ordinal < tabPositions.size) {
-                    TabRowDefaults.SecondaryIndicator(
-                        modifier = Modifier.tabIndicatorOffset(tabPositions[selectedSection.ordinal]),
-                        color = StudioColors.accent,
-                        height = 3.dp
-                    )
-                }
-            },
-            divider = {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
-            }
+        FlowRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(StudioColors.panelRaised, MaterialTheme.shapes.small)
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             DocSection.entries.forEach { section ->
                 val selected = selectedSection == section
-                Tab(
-                    selected = selected,
-                    onClick = { selectedSection = section },
-                    text = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp)
-                        ) {
-                            Icon(
-                                imageVector = section.icon,
-                                contentDescription = section.title,
-                                modifier = Modifier.size(StudioIconSize.small),
-                                tint = if (selected) StudioColors.accent else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = section.title,
-                                fontSize = StudioTypeSize.controlLabel,
-                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (selected) StudioColors.textPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                Surface(
+                    modifier = Modifier
+                        .clickable { selectedSection = section }
+                        .border(
+                            width = 1.dp,
+                            color = if (selected) StudioColors.accent.copy(alpha = 0.55f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+                            shape = MaterialTheme.shapes.small,
+                        ),
+                    color = if (selected) StudioColors.accent.copy(alpha = 0.12f) else Color.Transparent,
+                    shape = MaterialTheme.shapes.small,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 12.dp),
+                    ) {
+                        Icon(
+                            imageVector = section.icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(StudioIconSize.small),
+                            tint = if (selected) StudioColors.accent else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = section.title,
+                            fontSize = StudioTypeSize.controlLabel,
+                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (selected) StudioColors.textPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
                     }
-                )
+                }
             }
         }
 
@@ -441,11 +441,21 @@ private fun DocCard(
 
 @Composable
 private fun DocBullet(label: String, text: String) {
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Top) {
         Text("•", fontWeight = FontWeight.Bold, color = StudioColors.accent)
-        Text(label, fontWeight = FontWeight.Bold, fontSize = StudioTypeSize.controlLabel, color = StudioColors.textPrimary)
-        Text("—", color = StudioColors.textSecondary, fontSize = StudioTypeSize.controlLabel)
-        Text(text, fontSize = StudioTypeSize.controlLabel, color = StudioColors.textSecondary)
+        Text(
+            text = buildAnnotatedString {
+                withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = StudioColors.textPrimary)) {
+                    append(label)
+                }
+                append(" — ")
+                withStyle(SpanStyle(color = StudioColors.textSecondary)) {
+                    append(text)
+                }
+            },
+            fontSize = StudioTypeSize.controlLabel,
+            color = StudioColors.textSecondary,
+        )
     }
 }
 
@@ -462,7 +472,9 @@ private fun DocCodeBlock(code: String) {
             text = code,
             fontFamily = StudioFonts.mono,
             fontSize = StudioTypeSize.supporting,
-            modifier = Modifier.padding(14.dp),
+            modifier = Modifier
+                .horizontalScroll(rememberScrollState())
+                .padding(14.dp),
             color = StudioColors.accent
         )
     }
