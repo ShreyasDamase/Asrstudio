@@ -13,6 +13,7 @@ ASR Studio's TCP connection and ROS 2 DDS are different paths. The desktop appli
 - In-app guides for setup, connectivity, sensors, and ROS 2 topics.
 - Dark and light themes with a saved appearance preference.
 - Adaptive layouts reflow navigation, diagnostics, and documentation controls for narrow or short windows.
+- Separate in-app Privacy Policy and optional Buy Me a Coffee support pages.
 
 ## Downloads
 
@@ -95,10 +96,13 @@ The Android app publishes DDS topics under `/asr_android_<device-id>`. The host 
 - [Architecture](ARCHITECTURE.md)
 - [Roadmap](ROADMAP.md)
 - [Contributing](CONTRIBUTING.md)
+- [Privacy policy](PRIVACY_POLICY.md)
 
 ## Source and licensing
 
 This project is maintained by [Shreyas Damase](https://github.com/ShreyasDamase).
+
+If ASR Studio is useful to you, you can optionally [support the maintainer on Buy Me a Coffee](https://buymeacoffee.com/shreyasdamase). The link opens outside the app.
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. Third-party licenses and attribution notices are provided in the [NOTICE.txt](NOTICE.txt) file.
 

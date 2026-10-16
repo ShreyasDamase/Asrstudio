@@ -6,6 +6,23 @@ class JVMPlatform: Platform {
 
 actual fun getPlatform(): Platform = JVMPlatform()
 
+actual fun openExternalUrl(url: String): String? {
+    if (!java.awt.Desktop.isDesktopSupported()) return "No desktop browser is available."
+    val desktop = java.awt.Desktop.getDesktop()
+    if (!desktop.isSupported(java.awt.Desktop.Action.BROWSE)) return "No desktop browser is available."
+
+    return try {
+        desktop.browse(java.net.URI(url))
+        null
+    } catch (e: java.io.IOException) {
+        "Could not open the link: ${e.message ?: "browser launch failed"}"
+    } catch (e: java.net.URISyntaxException) {
+        "Could not open the link: ${e.message ?: "invalid URL"}"
+    } catch (e: SecurityException) {
+        "Could not open the link: ${e.message ?: "permission denied"}"
+    }
+}
+
 actual fun currentTimeMillis(): Long = System.currentTimeMillis()
 
 actual fun runAdbReverseAutoSetup(port: Int): String {

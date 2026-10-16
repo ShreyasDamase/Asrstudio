@@ -25,11 +25,13 @@ import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.LocalCafe
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.Router
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.VolumeUp
@@ -146,6 +148,20 @@ private enum class AppScreen(
         title = "Documentation",
         description = "Connection guides and sensor references.",
         icon = Icons.Default.Description,
+        group = "HELP",
+    ),
+    PrivacyPolicy(
+        label = "Privacy",
+        title = "Privacy Policy",
+        description = "How ASR Studio handles connection data and preferences.",
+        icon = Icons.Default.PrivacyTip,
+        group = "HELP",
+    ),
+    BuyMeACoffee(
+        label = "Buy Me a Coffee",
+        title = "Buy Me a Coffee",
+        description = "Support the maintainer of ASR Studio.",
+        icon = Icons.Default.LocalCafe,
         group = "HELP",
     ),
     About(
@@ -479,6 +495,8 @@ private fun ScreenContent(
             AppScreen.Speaker -> SpeakerScreen(speakerViewModel)
             AppScreen.Microphone -> MicrophoneScreen(studioService.sensorRepository)
             AppScreen.Docs -> DocsScreen()
+            AppScreen.PrivacyPolicy -> org.asr.studio.ui.privacy.PrivacyPolicyScreen()
+            AppScreen.BuyMeACoffee -> org.asr.studio.ui.support.SupportScreen()
             AppScreen.About -> org.asr.studio.ui.about.AboutScreen()
             else -> PlaceholderContent(screen)
         }

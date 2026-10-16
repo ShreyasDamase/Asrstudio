@@ -11,7 +11,11 @@ import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -123,7 +127,7 @@ private fun GettingStartedDoc() {
         DocCard(title = "System Component Overview", icon = Icons.Default.Layers) {
             DocBullet("ASR Android Runtime", "Runs phone sensor modules and exposes ROS 2 DDS and optional TCP connections.")
             DocBullet("ASR Studio", "Desktop diagnostics client for camera, IMU, audio, GPS, device state, and ASR packet inspection.")
-            DocBullet("ROS 2 Link Monitor", "Companion ROS 2 node for USB-tether and Wi-Fi DDS link, active discovery, and sensor-flow diagnostics.")
+            DocBullet("ROS 2 USB Link Monitor", "Optional companion tool for USB-tether DDS link and sensor-flow diagnostics. Wi-Fi DDS uses normal ROS 2 nodes.")
         }
 
         DocCard(title = "First Connection", icon = Icons.Default.PlayArrow) {
@@ -131,7 +135,7 @@ private fun GettingStartedDoc() {
 # 1. On Android: open ASR Runtime, grant needed permissions, and start Runtime.
 # 2. For the desktop app: use the TCP section in ASR Runtime and ASR Studio -> Devices.
 # 3. For ROS 2: enable Wi-Fi DDS or USB DDS separately in the phone app.
-# 4. For DDS diagnostics & active discovery, launch asr_ros2 (transport:=wifi or transport:=usb).
+# 4. For Wi-Fi DDS, use a normal ROS 2 node. For USB-tether diagnostics, follow the USB Link Monitor guide.
 
 ROS_DOMAIN_ID=0
 RMW_IMPLEMENTATION=rmw_fastrtps_cpp
@@ -164,8 +168,8 @@ private fun ConnectivityDoc() {
         DocCard(title = "ROS 2 DDS (USB and Wi-Fi)", icon = Icons.Default.Hub) {
             DocBullet("Phone", "Enable USB DDS (with USB tethering) or Wi-Fi DDS in the phone app. State remains 'Waiting for discovery' until a ROS 2 peer listens.")
             DocBullet("Host", "Use a sourced ROS 2 environment with rmw_fastrtps_cpp and the same ROS_DOMAIN_ID (default 0).")
-            DocBullet("Wi-Fi Monitor", "Run ros2 launch asr_ros2 connect.launch.py transport:=wifi to trigger active discovery and monitor sensor streams.")
-            DocBullet("USB Monitor", "Run ros2 launch asr_ros2 connect.launch.py transport:=usb. Add interface:=<name> if tether interface selection is ambiguous.")
+            DocBullet("Wi-Fi", "Use a regular ROS 2 node or subscriber on the network; the USB Link Monitor is not needed for Wi-Fi DDS.")
+            DocBullet("USB", "Enable Android USB tethering and USB DDS. Follow the companion USB Link Monitor guide for host diagnostics.")
         }
     }
 }
@@ -177,27 +181,27 @@ private fun HardwareModulesDoc() {
         Text("Hardware Modules Reference", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
 
         DocCard(title = "Camera Module (id: 'camera')", icon = Icons.Default.PhotoCamera) {
-            DocBullet("Resolution", "640x480 YUV420_888 converted to NV21 with Stride-aware memory alignment.")
-            DocBullet("Encoding", "JPEG (Quality 75, ~25 KB/frame at 30 FPS).")
+            DocBullet("Image path", "CameraX YUV_420_888 frames are converted and JPEG-compressed by the Android runtime.")
+            DocBullet("Configuration", "Resolution and frame rate are configurable; actual availability depends on the camera.")
             DocBullet("Topic ID", "0x01 (CAMERA_FRAME)")
         }
 
         DocCard(title = "IMU Module (id: 'imu')", icon = Icons.Default.Explore) {
-            DocBullet("Sensors", "Accelerometer (m/s²), Gyroscope (rad/s), Gravity Vector, Magnetometer (μT), Rotation Vector.")
-            DocBullet("Quaternion", "Full 4-component Quaternion [w, x, y, z] output at 100 Hz.")
+            DocBullet("v1 packet fields", "Accelerometer (m/s²), gyroscope (rad/s), gravity vector (m/s²), and a four-component rotation quaternion [w, x, y, z].")
+            DocBullet("Not in the current v1 packet", "Linear acceleration and magnetometer samples are not serialized by the current Android IMU packet.")
             DocBullet("Topic ID", "0x02 (IMU)")
         }
 
         DocCard(title = "Speaker Module (id: 'speaker')", icon = Icons.Default.VolumeUp) {
-            DocBullet("Engine", "Android Text-To-Speech (TTS) + SSML Natural Speech Prosody.")
-            DocBullet("Commands", "speaker.speak (JSON: {\"cmd\":\"speaker.speak\",\"params\":{\"text\":\"...\",\"ssml\":true}})")
+            DocBullet("Engine", "Android Text-to-Speech.")
+            DocBullet("TCP command", "speaker.speak accepts a text parameter; the current Android handler speaks that text.")
             DocBullet("Intent Action", "org.asr.runtime.SPEAK (--es text \"...\")")
         }
 
         DocCard(title = "Audio Microphone Module (id: 'audio')", icon = Icons.Default.Mic) {
             DocBullet("Format", "16 kHz Mono PCM 16-bit Signed Little Endian.")
             DocBullet("Telemetry", "RMS level, peak hold level, noise floor, and VAD sent at ~20 Hz.")
-            DocBullet("Topic ID", "0x05 (AUDIO) & 0x10 (AUDIO_RAW)")
+            DocBullet("Topic IDs", "0x05 (AUDIO diagnostics); raw PCM is currently sent on 0x10, which Android's frozen registry names RESERVED_10.")
         }
 
         DocCard(title = "GPS Module (id: 'gps')", icon = Icons.Default.Place) {
@@ -207,12 +211,12 @@ private fun HardwareModulesDoc() {
 
         DocCard(title = "Flashlight Module (id: 'flashlight')", icon = Icons.Default.FlashlightOn) {
             DocBullet("Control", "Physical rear camera LED torch toggle.")
-            DocBullet("Topic ID", "0x0E (FLASHLIGHT)")
+            DocBullet("Control path", "Uses the COMMAND packet topic (0x08); Android does not define a separate flashlight telemetry topic in its v1 registry.")
         }
 
-        DocCard(title = "Ambient Light Sensor (id: 'light_sensor')", icon = Icons.Default.LightMode) {
-            DocBullet("Output", "Ambient illuminance in lux.")
-            DocBullet("Topic ID", "0x0F (LIGHT_SENSOR)")
+        DocCard(title = "Environment Sensors (id: 'environment')", icon = Icons.Default.LightMode) {
+            DocBullet("Output", "Illuminance, pressure, ambient temperature, and relative humidity when the device supports them.")
+            DocBullet("Topic ID", "0x06 (ENVIRONMENT), with the sensor type and value in the payload.")
         }
     }
 }
@@ -288,8 +292,8 @@ adb shell "am start-foreground-service -a org.asr.runtime.SPEAK --es text 'Warni
 
         DocCard(title = "5. Live Diagnostics & Logcat Telemetry", icon = Icons.Default.Analytics) {
             DocCodeBlock("""
-# Query Active Module State Broadcast
-adb shell "am broadcast -a org.asr.runtime.STATUS"
+# Query Runtime Status
+adb shell "am start-foreground-service -a org.asr.runtime.STATUS org.asr.runtime/org.asr.runtime.core.AsrService"
 
 # Stream High-Speed Telemetry and Frame Benchmark Logs
 adb logcat -s PhoneCamera:V AsrAudio:V AsrService:V AsrTransport:V
@@ -338,8 +342,7 @@ Offset  Bytes  Field          Description
             DocBullet("battery", "sensor_msgs/msg/BatteryState")
             DocBullet("environment/illuminance", "sensor_msgs/msg/Illuminance")
             DocBullet("audio/raw", "std_msgs/msg/Int16MultiArray")
-            DocBullet("speaker/speech", "std_msgs/msg/String command")
-            DocBullet("flashlight", "std_msgs/msg/String command")
+            DocBullet("Inbound subscriptions", "The runtime subscribes to test/in, speaker/speech, and flashlight (std_msgs/msg/String). These are commands sent to the phone, not published sensor topics.")
         }
 
         DocCard(title = "USB monitor scope", icon = Icons.Default.Cable) {
@@ -382,11 +385,9 @@ ros2 topic echo /asr_android_168/camera/image/compressed
 
         DocCard(title = "Audio and device commands", icon = Icons.Default.Mic) {
             DocBullet("/audio/raw", "std_msgs/msg/Int16MultiArray — microphone samples when audio capture is enabled")
-            DocBullet("/speaker/speech", "std_msgs/msg/String — inbound text-to-speech command")
-            DocBullet("/flashlight", "std_msgs/msg/String — inbound flashlight command")
             DocBullet("/status", "std_msgs/msg/String — runtime heartbeat")
             DocBullet("/capabilities", "std_msgs/msg/String — device capability information")
-            DocBullet("/test/in", "std_msgs/msg/String — inbound test/control topic")
+            DocBullet("/speaker/speech, /flashlight, /test/in", "std_msgs/msg/String subscriptions for inbound speech, flashlight, and test/control commands")
         }
 
         DocCard(title = "USB monitor coverage", icon = Icons.Default.Cable) {

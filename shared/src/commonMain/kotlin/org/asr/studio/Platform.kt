@@ -6,6 +6,8 @@ interface Platform {
 
 expect fun getPlatform(): Platform
 
+expect fun openExternalUrl(url: String): String?
+
 expect fun runAdbReverseAutoSetup(port: Int = 4242): String
 
 /**

@@ -46,7 +46,8 @@ The IMU page renders a phone model in a JVM 3D viewport. The model receives the 
 
 - `README.md` is the entry point for building, connecting, and using the app.
 - The in-app Documentation screen covers setup, TCP connectivity, sensor topics, protocol details, and USB DDS helper scope.
+- `PRIVACY_POLICY.md` describes the data Studio handles, local session retention, network limitations, and its optional external support link.
 - `ROADMAP.md` tracks user-facing work and remaining release readiness items.
 - The About screen displays the desktop package version. Keep it aligned with `desktopApp/build.gradle.kts`.
 
-No license is currently included in this repository. Do not describe the project as open source until an appropriate license and third-party notices are added.
+The repository includes an MIT license. Third-party notices and bundled font licenses are documented in `NOTICE.txt` and the font-licenses resources.

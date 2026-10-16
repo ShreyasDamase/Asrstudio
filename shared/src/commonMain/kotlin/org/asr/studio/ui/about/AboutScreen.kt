@@ -49,7 +49,7 @@ fun AboutScreen() {
             }
         }
 
-        Text("Connection guides and ROS 2 topic references are available in Documentation.",
+        Text("Connection guides and ROS 2 topic references are in Documentation. Privacy Policy and Buy Me a Coffee have their own sidebar pages.",
             style = MaterialTheme.typography.bodySmall,
             color = StudioColors.textSecondary)
     }
