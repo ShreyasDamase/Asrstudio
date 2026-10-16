@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.asr.studio.protocol.ConnectionState
 
@@ -55,7 +56,10 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                         onClick = { viewModel.mode = ConnectMode.WIFI; if (connectionState == ConnectionState.Disconnected) viewModel.host = "" },
                         label = {
                             Text(
-                                if (activeConnectionMode == ConnectMode.WIFI) "Wi-Fi (ACTIVE)" else "Wi-Fi"
+                                if (activeConnectionMode == ConnectMode.WIFI) "Wi-Fi (ACTIVE)" else "Wi-Fi",
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         },
                         modifier = Modifier.weight(1f),
@@ -66,7 +70,10 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                         onClick = { viewModel.mode = ConnectMode.ADB; if (connectionState == ConnectionState.Disconnected) viewModel.host = "127.0.0.1" },
                         label = {
                             Text(
-                                if (activeConnectionMode == ConnectMode.ADB) "USB / ADB (ACTIVE)" else "USB / ADB"
+                                if (activeConnectionMode == ConnectMode.ADB) "USB / ADB (ACTIVE)" else "USB / ADB",
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         },
                         modifier = Modifier.weight(1f),
@@ -177,7 +184,7 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                         ),
                         shape = StudioRadii.controlShape,
                     ) {
-                        Text("Auto-Configure USB / ADB (1-Click Setup)")
+                        Text("Auto-Configure USB / ADB (1-Click Setup)", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                     }
 
                     viewModel.adbStatusMessage?.let { status ->
@@ -190,69 +197,19 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                     }
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = {
-                            val resolvedHost = viewModel.host.ifBlank {
-                                if (viewModel.mode == ConnectMode.ADB) "127.0.0.1" else ""
-                            }
-                            val resolvedPort = viewModel.port.toIntOrNull() ?: 4242
-                            viewModel.connect(resolvedHost, resolvedPort)
-                        },
-                        modifier = Modifier.weight(1f),
-                        enabled = isInputEnabled && (viewModel.mode == ConnectMode.ADB || viewModel.host.isNotBlank()),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = StudioColors.textSecondary,
-                            disabledContentColor = StudioColors.textMuted,
-                        ),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, StudioColors.borderStrong),
-                        shape = StudioRadii.controlShape,
-                    ) {
-                        Text("Connect (Client)")
-                    }
-
-                    Button(
-                        onClick = {
-                            val listenHost = if (viewModel.mode == ConnectMode.ADB) "127.0.0.1" else "0.0.0.0"
-                            viewModel.listen(listenHost, viewModel.port.toIntOrNull() ?: 4242)
-                        },
-                        modifier = Modifier.weight(1f),
-                        enabled = isInputEnabled,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = StudioColors.accent,
-                            contentColor = StudioColors.canvas,
-                            disabledContainerColor = StudioColors.panelRaised,
-                            disabledContentColor = StudioColors.textMuted,
-                        ),
-                        shape = StudioRadii.controlShape,
-                    ) {
-                        Text("Listen (Server)")
-                    }
-                }
-
-                if (connectionState == ConnectionState.Connected) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Button(
-                            onClick = { viewModel.startRuntime() },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = StudioColors.accent,
-                                contentColor = StudioColors.canvas,
-                            ),
-                            shape = StudioRadii.controlShape,
-                        ) {
-                            Text("Start ASR Runtime")
-                        }
-
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    val narrow = maxWidth < 520.dp
+                    val connectAction: @Composable (Modifier) -> Unit = { buttonModifier ->
                         OutlinedButton(
-                            onClick = { viewModel.stopRuntime() },
-                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                val resolvedHost = viewModel.host.ifBlank {
+                                    if (viewModel.mode == ConnectMode.ADB) "127.0.0.1" else ""
+                                }
+                                val resolvedPort = viewModel.port.toIntOrNull() ?: 4242
+                                viewModel.connect(resolvedHost, resolvedPort)
+                            },
+                            modifier = buttonModifier,
+                            enabled = isInputEnabled && (viewModel.mode == ConnectMode.ADB || viewModel.host.isNotBlank()),
                             colors = ButtonDefaults.outlinedButtonColors(
                                 contentColor = StudioColors.textSecondary,
                                 disabledContentColor = StudioColors.textMuted,
@@ -260,7 +217,86 @@ fun DevicesScreen(viewModel: DevicesViewModel) {
                             border = androidx.compose.foundation.BorderStroke(1.dp, StudioColors.borderStrong),
                             shape = StudioRadii.controlShape,
                         ) {
-                            Text("Stop ASR Runtime")
+                            Text("Connect (Client)", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+
+                    val listenAction: @Composable (Modifier) -> Unit = { buttonModifier ->
+                        Button(
+                            onClick = {
+                                val listenHost = if (viewModel.mode == ConnectMode.ADB) "127.0.0.1" else "0.0.0.0"
+                                viewModel.listen(listenHost, viewModel.port.toIntOrNull() ?: 4242)
+                            },
+                            modifier = buttonModifier,
+                            enabled = isInputEnabled,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = StudioColors.accent,
+                                contentColor = StudioColors.canvas,
+                                disabledContainerColor = StudioColors.panelRaised,
+                                disabledContentColor = StudioColors.textMuted,
+                            ),
+                            shape = StudioRadii.controlShape,
+                        ) {
+                            Text("Listen (Server)", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+
+                    if (narrow) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            connectAction(Modifier.fillMaxWidth())
+                            listenAction(Modifier.fillMaxWidth())
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            connectAction(Modifier.weight(1f))
+                            listenAction(Modifier.weight(1f))
+                        }
+                    }
+                }
+
+                if (connectionState == ConnectionState.Connected) {
+                    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                        val narrow = maxWidth < 520.dp
+                        val runtimeActions: List<@Composable (Modifier) -> Unit> = listOf(
+                            { buttonModifier ->
+                                Button(
+                                    onClick = { viewModel.startRuntime() },
+                                    modifier = buttonModifier,
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = StudioColors.accent,
+                                        contentColor = StudioColors.canvas,
+                                    ),
+                                    shape = StudioRadii.controlShape,
+                                ) {
+                                    Text("Start ASR Runtime", maxLines = 1, softWrap = false)
+                                }
+                            },
+                            { buttonModifier ->
+                                OutlinedButton(
+                                    onClick = { viewModel.stopRuntime() },
+                                    modifier = buttonModifier,
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        contentColor = StudioColors.textSecondary,
+                                        disabledContentColor = StudioColors.textMuted,
+                                    ),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, StudioColors.borderStrong),
+                                    shape = StudioRadii.controlShape,
+                                ) {
+                                    Text("Stop ASR Runtime", maxLines = 1, softWrap = false)
+                                }
+                            },
+                        )
+                        if (narrow) {
+                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                runtimeActions.forEach { action -> action(Modifier.fillMaxWidth()) }
+                            }
+                        } else {
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                runtimeActions.forEach { action -> action(Modifier.weight(1f)) }
+                            }
                         }
                     }
                 }

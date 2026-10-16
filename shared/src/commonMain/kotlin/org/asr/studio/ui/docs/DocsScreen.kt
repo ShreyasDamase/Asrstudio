@@ -17,13 +17,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.asr.studio.ui.theme.StudioColors
 import org.asr.studio.ui.theme.StudioIconSize
 import org.asr.studio.ui.theme.StudioTypeSize
+import org.asr.studio.ui.theme.StudioFonts
 
 private enum class DocSection(
     val title: String,
@@ -460,7 +460,7 @@ private fun DocCodeBlock(code: String) {
     ) {
         Text(
             text = code,
-            fontFamily = FontFamily.Monospace,
+            fontFamily = StudioFonts.mono,
             fontSize = StudioTypeSize.supporting,
             modifier = Modifier.padding(14.dp),
             color = StudioColors.accent

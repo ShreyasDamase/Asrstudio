@@ -12,11 +12,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.asr.studio.ui.components.StudioToggle
 import org.asr.studio.ui.theme.StudioSpacing
 import org.asr.studio.ui.theme.StudioRadii
+import org.asr.studio.ui.theme.StudioFonts
 
 @Composable
 fun SpeakerScreen(viewModel: SpeakerViewModel) {
@@ -62,25 +64,29 @@ fun SpeakerScreen(viewModel: SpeakerViewModel) {
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column {
-                        Text("TTS Engine", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(telemetry.ttsEngine, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                    }
-                    Column {
-                        Text("Language", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(telemetry.language, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                    }
-                    Column {
-                        Text("Volume", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("${telemetry.volume}%", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                    }
-                    Column {
-                        Text("Output", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("Android TTS", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    val details = listOf(
+                        "TTS Engine" to telemetry.ttsEngine,
+                        "Language" to telemetry.language,
+                        "Volume" to "${telemetry.volume}%",
+                        "Output" to "Android TTS",
+                    )
+                    val columns = if (maxWidth < 560.dp) 2 else 4
+                    Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.md)) {
+                        details.chunked(columns).forEach { rowDetails ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                rowDetails.forEach { (label, value) ->
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false)
+                                    }
+                                }
+                                repeat(columns - rowDetails.size) { Spacer(Modifier.weight(1f)) }
+                            }
+                        }
                     }
                 }
             }
@@ -103,30 +109,36 @@ fun SpeakerScreen(viewModel: SpeakerViewModel) {
                     fontWeight = FontWeight.SemiBold
                 )
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm)
-                ) {
-                    OutlinedButton(
-                        onClick = { viewModel.testVoice() },
-                        modifier = Modifier.weight(1f),
-                        shape = StudioRadii.controlShape,
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    val tests: List<Pair<String, () -> Unit>> = listOf(
+                        "Voice" to viewModel::testVoice,
+                        "Warning" to viewModel::testWarning,
+                        "Sequence" to viewModel::testSequence,
+                    )
+                    val narrow = maxWidth < 520.dp
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm),
                     ) {
-                        Text("Voice")
-                    }
-                    OutlinedButton(
-                        onClick = { viewModel.testWarning() },
-                        modifier = Modifier.weight(1f),
-                        shape = StudioRadii.controlShape,
-                    ) {
-                        Text("Warning")
-                    }
-                    OutlinedButton(
-                        onClick = { viewModel.testSequence() },
-                        modifier = Modifier.weight(1f),
-                        shape = StudioRadii.controlShape,
-                    ) {
-                        Text("Sequence")
+                        tests.chunked(if (narrow) 1 else 3).forEach { rowTests ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm),
+                            ) {
+                                rowTests.forEach { (label, action) ->
+                                    OutlinedButton(
+                                        onClick = action,
+                                        modifier = Modifier.weight(1f),
+                                        shape = StudioRadii.controlShape,
+                                    ) {
+                                        Text(label, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                                    }
+                                }
+                                repeat((if (narrow) 1 else 3) - rowTests.size) {
+                                    Spacer(Modifier.weight(1f))
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -181,7 +193,7 @@ fun SpeakerScreen(viewModel: SpeakerViewModel) {
                             Text(
                                 text = ssmlPreview,
                                 style = MaterialTheme.typography.bodySmall,
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                fontFamily = StudioFonts.mono,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                         }
@@ -298,7 +310,7 @@ private fun ActivityRow(label: String, value: String, mono: Boolean = false) {
             text = value,
             modifier = Modifier.weight(1f).padding(start = StudioSpacing.lg),
             style = MaterialTheme.typography.bodyMedium,
-            fontFamily = if (mono) FontFamily.Monospace else FontFamily.Default,
+            fontFamily = if (mono) StudioFonts.mono else FontFamily.Default,
             fontWeight = FontWeight.Medium,
             maxLines = 1,
             textAlign = androidx.compose.ui.text.style.TextAlign.End,

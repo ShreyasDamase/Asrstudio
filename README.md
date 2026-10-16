@@ -11,6 +11,7 @@ ASR Studio's TCP connection and ROS 2 DDS are different paths. The desktop appli
 - IMU orientation visualization with phone-frame axes, view presets, and pose readouts.
 - Audio, speaker, GPS, device, and protocol diagnostics.
 - In-app guides for setup, connectivity, sensors, and ROS 2 topics.
+- Dark and light themes with a saved appearance preference.
 
 ## Downloads
 
@@ -99,3 +100,5 @@ The Android app publishes DDS topics under `/asr_android_<device-id>`. The host 
 This project is maintained by [Shreyas Damase](https://github.com/ShreyasDamase).
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. Third-party licenses and attribution notices are provided in the [NOTICE.txt](NOTICE.txt) file.
+
+The bundled Space Grotesk and Space Mono fonts are licensed under the SIL Open Font License 1.1; their license texts are in `shared/src/commonMain/composeResources/files/font-licenses/`.

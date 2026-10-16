@@ -13,8 +13,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.asr.studio.data.PacketEntry
@@ -22,42 +22,66 @@ import org.asr.studio.protocol.TopicId
 import org.asr.studio.ui.theme.StudioColors
 import org.asr.studio.ui.theme.StudioTypeSize
 import org.asr.studio.ui.theme.StudioRadii
+import org.asr.studio.ui.theme.StudioFonts
 
 @Composable
 fun PacketInspectorScreen(viewModel: PacketInspectorViewModel) {
     val packets by viewModel.packets.collectAsState()
     var selectedPacket by remember { mutableStateOf<PacketEntry?>(null) }
 
-    Row(modifier = Modifier.fillMaxSize()) {
-        // Packet List
-        Column(modifier = Modifier.weight(0.6f).fillMaxHeight()) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Packet History (${packets.size})",
-                    style = MaterialTheme.typography.titleSmall
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        if (maxWidth < 820.dp) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                PacketHistoryPanel(
+                    viewModel = viewModel,
+                    packets = packets,
+                    selectedPacket = selectedPacket,
+                    onPacketSelected = { selectedPacket = it },
+                    modifier = Modifier.weight(0.48f),
                 )
-                TextButton(onClick = { viewModel.clear() }, shape = StudioRadii.controlShape) {
-                    Text("Clear")
+                HorizontalDivider()
+                Column(modifier = Modifier.weight(0.52f).fillMaxWidth()) {
+                    PacketDetailPanel(selectedPacket)
                 }
             }
-            
-            PacketList(
-                packets = packets,
-                selectedPacket = selectedPacket,
-                onPacketSelected = { selectedPacket = it }
-            )
+        } else {
+            Row(modifier = Modifier.fillMaxSize()) {
+                PacketHistoryPanel(
+                    viewModel = viewModel,
+                    packets = packets,
+                    selectedPacket = selectedPacket,
+                    onPacketSelected = { selectedPacket = it },
+                    modifier = Modifier.weight(0.6f).fillMaxHeight(),
+                )
+                VerticalDivider()
+                Column(modifier = Modifier.weight(0.4f).fillMaxHeight()) {
+                    PacketDetailPanel(selectedPacket)
+                }
+            }
         }
+    }
+}
 
-        VerticalDivider()
-
-        // Detail Panel
-        Column(modifier = Modifier.weight(0.4f).fillMaxHeight()) {
-            PacketDetailPanel(selectedPacket)
+@Composable
+private fun PacketHistoryPanel(
+    viewModel: PacketInspectorViewModel,
+    packets: List<PacketEntry>,
+    selectedPacket: PacketEntry?,
+    onPacketSelected: (PacketEntry) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Packet History (${packets.size})", style = MaterialTheme.typography.titleSmall)
+            TextButton(onClick = { viewModel.clear() }, shape = StudioRadii.controlShape) {
+                Text("CLEAR", maxLines = 1, softWrap = false)
+            }
         }
+        PacketList(packets, selectedPacket, onPacketSelected)
     }
 }
 
@@ -97,11 +121,11 @@ private fun HeaderRow() {
         modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text("Topic", Modifier.weight(1.2f), fontWeight = FontWeight.Bold, fontSize = StudioTypeSize.caption)
-        Text("Seq", Modifier.weight(0.8f), fontWeight = FontWeight.Bold, fontSize = StudioTypeSize.caption)
-        Text("Size", Modifier.weight(0.8f), fontWeight = FontWeight.Bold, fontSize = StudioTypeSize.caption)
-        Text("Timestamp (ns)", Modifier.weight(1.5f), fontWeight = FontWeight.Bold, fontSize = StudioTypeSize.caption)
-        Text("CRC", Modifier.weight(0.7f), fontWeight = FontWeight.Bold, fontSize = StudioTypeSize.caption)
+        Text("TOPIC", Modifier.weight(1.2f), fontWeight = FontWeight.Bold, fontSize = StudioTypeSize.caption, maxLines = 1, softWrap = false)
+        Text("SEQ", Modifier.weight(0.8f), fontWeight = FontWeight.Bold, fontSize = StudioTypeSize.caption, maxLines = 1, softWrap = false)
+        Text("SIZE", Modifier.weight(0.8f), fontWeight = FontWeight.Bold, fontSize = StudioTypeSize.caption, maxLines = 1, softWrap = false)
+        Text("TIME", Modifier.weight(1.5f), fontWeight = FontWeight.Bold, fontSize = StudioTypeSize.caption, maxLines = 1, softWrap = false)
+        Text("CRC", Modifier.weight(0.7f), fontWeight = FontWeight.Bold, fontSize = StudioTypeSize.caption, maxLines = 1, softWrap = false)
     }
 }
 
@@ -123,17 +147,19 @@ private fun PacketRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(topic.name, Modifier.weight(1.2f), fontSize = StudioTypeSize.caption)
-        Text(entry.frame.seq.toString(), Modifier.weight(0.8f), fontSize = StudioTypeSize.caption)
-        Text(entry.frame.payloadLength.toString(), Modifier.weight(0.8f), fontSize = StudioTypeSize.caption)
-        Text(entry.frame.timestampNs.toString(), Modifier.weight(1.5f), fontSize = StudioTypeSize.caption, fontFamily = FontFamily.Monospace)
+        Text(topic.name, Modifier.weight(1.2f), fontSize = StudioTypeSize.caption, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+        Text(entry.frame.seq.toString(), Modifier.weight(0.8f), fontSize = StudioTypeSize.caption, maxLines = 1, softWrap = false)
+        Text(entry.frame.payloadLength.toString(), Modifier.weight(0.8f), fontSize = StudioTypeSize.caption, maxLines = 1, softWrap = false)
+        Text(entry.frame.timestampNs.toString(), Modifier.weight(1.5f), fontSize = StudioTypeSize.caption, fontFamily = StudioFonts.mono, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
         
         Text(
             text = if (entry.frame.crcValid) "OK" else "FAIL",
             modifier = Modifier.weight(0.7f),
             fontSize = StudioTypeSize.caption,
             fontWeight = FontWeight.Bold,
-            color = if (entry.frame.crcValid) StudioColors.success else StudioColors.error
+            color = if (entry.frame.crcValid) StudioColors.success else StudioColors.error,
+            maxLines = 1,
+            softWrap = false,
         )
     }
 }
@@ -170,7 +196,7 @@ private fun PacketDetailPanel(entry: PacketEntry?) {
             Text(
                 text = hexDump(entry.frame.payload),
                 modifier = Modifier.padding(12.dp),
-                fontFamily = FontFamily.Monospace,
+                fontFamily = StudioFonts.mono,
                 fontSize = StudioTypeSize.caption,
                 lineHeight = 16.sp
             )

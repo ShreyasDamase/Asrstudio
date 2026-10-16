@@ -84,3 +84,10 @@ actual fun playAudioPcm(pcmBytes: ByteArray, offset: Int, length: Int) {
     }
 }
 
+private val studioPreferences = java.util.prefs.Preferences.userRoot().node("org/asr/studio")
+
+actual fun loadStudioThemePreference(): Boolean = studioPreferences.getBoolean("darkTheme", true)
+
+actual fun saveStudioThemePreference(isDarkTheme: Boolean) {
+    studioPreferences.putBoolean("darkTheme", isDarkTheme)
+}

@@ -4,10 +4,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -36,7 +39,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -49,6 +51,7 @@ import org.asr.studio.currentTimeMillis
 import org.asr.studio.data.GpsData
 import org.asr.studio.ui.theme.StudioColors
 import org.asr.studio.ui.theme.StudioTypeSize
+import org.asr.studio.ui.theme.StudioFonts
 
 @Composable
 fun GpsScreen(viewModel: DiagnosticsViewModel) {
@@ -70,58 +73,101 @@ fun GpsScreen(viewModel: DiagnosticsViewModel) {
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-            GpsCard(modifier = Modifier.weight(1.35f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Navigation Plot", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.width(10.dp))
-                    StatusBadge(if (gps == null) "WAITING FOR FIX" else "LIVE GPS")
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val compact = maxWidth < 820.dp
+            if (compact) {
+                Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                    GpsPlotPanel(gps, history)
+                    GpsFixDetailsPanel(gps)
+                    GpsMotionPanel(history)
+                    GpsReceiverPanel(gps, history, lastGpsReceivedAtMs)
                 }
-                Spacer(Modifier.height(14.dp))
-                GpsPlot(gps = gps, history = history, modifier = Modifier.fillMaxWidth().aspectRatio(1.65f))
-            }
-
-            GpsCard(modifier = Modifier.weight(1f)) {
-                Text("Fix Details", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(16.dp))
-                CoordinateReadout(gps)
-                Spacer(Modifier.height(18.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    MetricTile("Accuracy", gps?.let { "${"%.1f".format(it.accuracy)} m" } ?: "--", Modifier.weight(1f))
-                    MetricTile("Altitude", gps?.let { "${"%.1f".format(it.alt)} m" } ?: "--", Modifier.weight(1f))
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                        horizontalArrangement = Arrangement.spacedBy(18.dp),
+                    ) {
+                        GpsPlotPanel(gps, history, Modifier.weight(1.35f))
+                        GpsFixDetailsPanel(gps, Modifier.weight(1f))
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                        horizontalArrangement = Arrangement.spacedBy(18.dp),
+                    ) {
+                        GpsMotionPanel(history, Modifier.weight(1f))
+                        GpsReceiverPanel(gps, history, lastGpsReceivedAtMs, Modifier.weight(1f))
+                    }
                 }
-                Spacer(Modifier.height(10.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    MetricTile("Speed", gps?.let { "${"%.2f".format(it.speed)} m/s" } ?: "--", Modifier.weight(1f))
-                    MetricTile("Bearing", gps?.let { "${"%.1f".format(it.bearing)} deg" } ?: "--", Modifier.weight(1f))
-                }
-                Spacer(Modifier.height(18.dp))
-                BearingCompass(gps?.bearing ?: 0f, modifier = Modifier.fillMaxWidth().height(180.dp))
             }
         }
+    }
+}
 
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-            GpsCard(modifier = Modifier.weight(1f)) {
-                Text("Motion", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(14.dp))
-                SpeedStrip(history, Modifier.fillMaxWidth().height(170.dp))
-            }
-            GpsCard(modifier = Modifier.weight(1f)) {
-                Text("Receiver Health", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(14.dp))
-                val ageSeconds = lastGpsReceivedAtMs?.let { max(0L, (currentTimeMillis() - it) / 1000L) }
-                HealthRow("Fix status", if (gps == null) "No fix yet" else "Location packets received")
-                HealthRow("Last update", ageSeconds?.let { "$it s ago" } ?: "Never")
-                HealthRow("Track samples", history.size.toString())
-                HealthRow("Map mode", "API-free local plot")
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    "This view uses ASR's GPS packets directly. It does not need Google Maps credentials; add a map tile provider later only if road or satellite context is important.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
+@Composable
+private fun GpsPlotPanel(gps: GpsData?, history: List<GpsData>, modifier: Modifier = Modifier) {
+    GpsCard(modifier) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Navigation Plot", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.width(10.dp))
+            StatusBadge(if (gps == null) "WAITING FOR FIX" else "LIVE GPS")
         }
+        Spacer(Modifier.height(14.dp))
+        GpsPlot(gps, history, Modifier.fillMaxWidth().aspectRatio(1.65f))
+    }
+}
+
+@Composable
+private fun GpsFixDetailsPanel(gps: GpsData?, modifier: Modifier = Modifier) {
+    GpsCard(modifier) {
+        Text("Fix Details", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(16.dp))
+        CoordinateReadout(gps)
+        Spacer(Modifier.height(18.dp))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            MetricTile("Accuracy", gps?.let { "${"%.1f".format(it.accuracy)} m" } ?: "--", Modifier.weight(1f))
+            MetricTile("Altitude", gps?.let { "${"%.1f".format(it.alt)} m" } ?: "--", Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            MetricTile("Speed", gps?.let { "${"%.2f".format(it.speed)} m/s" } ?: "--", Modifier.weight(1f))
+            MetricTile("Bearing", gps?.let { "${"%.1f".format(it.bearing)} deg" } ?: "--", Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(18.dp))
+        BearingCompass(gps?.bearing ?: 0f, modifier = Modifier.fillMaxWidth().height(180.dp))
+    }
+}
+
+@Composable
+private fun GpsMotionPanel(history: List<GpsData>, modifier: Modifier = Modifier) {
+    GpsCard(modifier) {
+        Text("Motion", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(14.dp))
+        SpeedStrip(history, Modifier.fillMaxWidth().height(170.dp))
+    }
+}
+
+@Composable
+private fun GpsReceiverPanel(
+    gps: GpsData?,
+    history: List<GpsData>,
+    lastGpsReceivedAtMs: Long?,
+    modifier: Modifier = Modifier,
+) {
+    GpsCard(modifier) {
+        Text("Receiver Health", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(14.dp))
+        val ageSeconds = lastGpsReceivedAtMs?.let { max(0L, (currentTimeMillis() - it) / 1000L) }
+        HealthRow("Fix status", if (gps == null) "No fix yet" else "Location packets received")
+        HealthRow("Last update", ageSeconds?.let { "$it s ago" } ?: "Never")
+        HealthRow("Track samples", history.size.toString())
+        HealthRow("Map mode", "API-free local plot")
+        Spacer(Modifier.height(12.dp))
+        Text(
+            "This view uses ASR's GPS packets directly. It does not need Google Maps credentials; add a map tile provider later only if road or satellite context is important.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodySmall,
+        )
     }
 }
 
@@ -132,20 +178,21 @@ private fun GpsCard(modifier: Modifier = Modifier, content: @Composable ColumnSc
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
         shape = MaterialTheme.shapes.medium,
     ) {
-        Column(modifier = Modifier.padding(18.dp), content = content)
+        Column(modifier = Modifier.fillMaxHeight().padding(18.dp), content = content)
     }
 }
 
 @Composable
 private fun GpsPlot(gps: GpsData?, history: List<GpsData>, modifier: Modifier) {
     val primary = MaterialTheme.colorScheme.primary
+    val gridColor = StudioColors.border
     Canvas(modifier = modifier.background(StudioColors.canvas, MaterialTheme.shapes.medium)) {
         val pad = 26f
         repeat(9) { i ->
             val x = pad + (size.width - pad * 2f) * i / 8f
             val y = pad + (size.height - pad * 2f) * i / 8f
-            drawLine(StudioColors.border, Offset(x, pad), Offset(x, size.height - pad), 1f)
-            drawLine(StudioColors.border, Offset(pad, y), Offset(size.width - pad, y), 1f)
+            drawLine(gridColor, Offset(x, pad), Offset(x, size.height - pad), 1f)
+            drawLine(gridColor, Offset(pad, y), Offset(size.width - pad, y), 1f)
         }
         drawLine(StudioColors.plotCrosshair, Offset(size.width / 2f, pad), Offset(size.width / 2f, size.height - pad), 1.4f)
         drawLine(StudioColors.plotCrosshair, Offset(pad, size.height / 2f), Offset(size.width - pad, size.height / 2f), 1.4f)
@@ -214,18 +261,20 @@ private fun MetricTile(label: String, value: String, modifier: Modifier = Modifi
             .padding(14.dp),
     ) {
         Text(label.uppercase(), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = StudioTypeSize.caption, fontWeight = FontWeight.Bold)
-        Text(value, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold, fontSize = StudioTypeSize.detailMetric)
+        Text(value, fontFamily = StudioFonts.mono, fontWeight = FontWeight.SemiBold, fontSize = StudioTypeSize.detailMetric)
     }
 }
 
 @Composable
 private fun BearingCompass(bearing: Float, modifier: Modifier) {
     val primary = MaterialTheme.colorScheme.primary
+    val canvasColor = StudioColors.canvas
+    val borderColor = StudioColors.borderStrong
     Canvas(modifier = modifier) {
         val radius = min(size.width, size.height) * 0.42f
         val center = Offset(size.width / 2f, size.height / 2f)
-        drawCircle(StudioColors.canvas, radius, center)
-        drawCircle(StudioColors.borderStrong, radius, center, style = Stroke(2f))
+        drawCircle(canvasColor, radius, center)
+        drawCircle(borderColor, radius, center, style = Stroke(2f))
         repeat(24) { i ->
             val angle = (i * 15f - 90f) * PI.toFloat() / 180f
             val inner = radius - if (i % 6 == 0) 16f else 8f
@@ -247,12 +296,13 @@ private fun BearingCompass(bearing: Float, modifier: Modifier) {
 
 @Composable
 private fun SpeedStrip(history: List<GpsData>, modifier: Modifier) {
+    val gridColor = StudioColors.border
     Canvas(modifier = modifier.background(StudioColors.canvas, MaterialTheme.shapes.medium).padding(10.dp)) {
         val pad = 18f
         val maxSpeed = max(1f, history.maxOfOrNull { it.speed } ?: 1f)
         repeat(4) { i ->
             val y = pad + (size.height - pad * 2f) * i / 3f
-            drawLine(StudioColors.border, Offset(pad, y), Offset(size.width - pad, y), 1f)
+            drawLine(gridColor, Offset(pad, y), Offset(size.width - pad, y), 1f)
         }
         if (history.size < 2) return@Canvas
         val path = Path()
@@ -277,7 +327,7 @@ private fun HealthRow(label: String, value: String) {
 private fun ReadoutRow(label: String, value: String) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold)
+        Text(value, fontFamily = StudioFonts.mono, fontWeight = FontWeight.SemiBold)
     }
 }
 

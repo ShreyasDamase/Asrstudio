@@ -14,7 +14,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -31,6 +30,7 @@ import org.asr.studio.ui.components.StudioToggle
 import org.asr.studio.ui.theme.StudioColors
 import org.asr.studio.ui.theme.StudioSpacing
 import org.asr.studio.ui.theme.StudioTypeSize
+import org.asr.studio.ui.theme.StudioFonts
 
 @Composable
 private fun DiagnosticsCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
@@ -84,25 +84,23 @@ fun MicrophoneScreen(sensorRepository: org.asr.studio.data.SensorRepository) {
         verticalArrangement = Arrangement.spacedBy(StudioSpacing.lg)
     ) {
         // ── Header Status Row ────────────────────────────────────────────────
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(StudioSpacing.md)
-        ) {
-            MicStatusChip(
-                "Input",
-                when { mic != null -> "Receiving"; isMicActive -> "Waiting"; else -> "Stopped" },
-                Modifier.weight(1f),
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val chips = listOf(
+                "Input" to when { mic != null -> "Receiving"; isMicActive -> "Waiting"; else -> "Stopped" },
+                "Sample rate" to (mic?.let { "${it.sampleRateHz / 1000} kHz" } ?: "—"),
+                "Voice activity" to when { mic == null -> "No signal"; mic?.voiceActive == true -> "Detected"; else -> "Quiet" },
             )
-            MicStatusChip(
-                "Sample rate",
-                mic?.let { "${it.sampleRateHz / 1000} kHz" } ?: "—",
-                Modifier.weight(1f),
-            )
-            MicStatusChip(
-                "Voice activity",
-                when { mic == null -> "No signal"; mic?.voiceActive == true -> "Detected"; else -> "Quiet" },
-                Modifier.weight(1f),
-            )
+            if (maxWidth < 560.dp) {
+                Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
+                    chips.forEach { (label, value) -> MicStatusChip(label, value, Modifier.fillMaxWidth()) }
+                }
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(StudioSpacing.md)) {
+                    chips.forEach { (label, value) ->
+                        MicStatusChip(label, value, Modifier.weight(1f))
+                    }
+                }
+            }
         }
 
         // ── Microphone Control & Live Audio Monitor ──────────────────────────
@@ -164,7 +162,7 @@ fun MicrophoneScreen(sensorRepository: org.asr.studio.data.SensorRepository) {
                     Text(
                         adbResult,
                         style = MaterialTheme.typography.bodySmall,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = StudioFonts.mono,
                         color = if (adbResult.startsWith("ADB error:") || adbResult.startsWith("Could not run")) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                     )
                 }
@@ -193,11 +191,27 @@ fun MicrophoneScreen(sensorRepository: org.asr.studio.data.SensorRepository) {
                 color = StudioColors.accent
             )
             Spacer(Modifier.height(14.dp))
-            Row(modifier = Modifier.fillMaxWidth()) {
-                StatItemMic("RMS", "${"%.1f".format(toDbFS(mic?.rmsLevel ?: 0f))} dBFS", Modifier.weight(1f))
-                StatItemMic("Peak", "${"%.1f".format(toDbFS(mic?.peakLevel ?: 0f))} dBFS", Modifier.weight(1f))
-                StatItemMic("Noise Floor", "${"%.1f".format(mic?.noiseFloor ?: -60f)} dBFS", Modifier.weight(1f))
-                StatItemMic("VAD", if (mic?.voiceActive == true) "Active" else "Silent", Modifier.weight(1f))
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val stats = listOf(
+                    "RMS" to "${"%.1f".format(toDbFS(mic?.rmsLevel ?: 0f))} dBFS",
+                    "Peak" to "${"%.1f".format(toDbFS(mic?.peakLevel ?: 0f))} dBFS",
+                    "Noise Floor" to "${"%.1f".format(mic?.noiseFloor ?: -60f)} dBFS",
+                    "VAD" to if (mic?.voiceActive == true) "Active" else "Silent",
+                )
+                val columns = if (maxWidth < 620.dp) 2 else 4
+                Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.md)) {
+                    stats.chunked(columns).forEach { rowStats ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm),
+                        ) {
+                            rowStats.forEach { (label, value) ->
+                                StatItemMic(label, value, Modifier.weight(1f))
+                            }
+                            repeat(columns - rowStats.size) { Spacer(Modifier.weight(1f)) }
+                        }
+                    }
+                }
             }
         }
 
@@ -224,7 +238,7 @@ fun MicrophoneScreen(sensorRepository: org.asr.studio.data.SensorRepository) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Text(
                         "/asr/audio/level  [asr_msgs/msg/AudioLevel]",
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = StudioFonts.mono,
                         fontWeight = FontWeight.Bold,
                         color = StudioColors.accent,
                         fontSize = StudioTypeSize.controlLabel
@@ -232,7 +246,7 @@ fun MicrophoneScreen(sensorRepository: org.asr.studio.data.SensorRepository) {
                     Spacer(Modifier.height(4.dp))
                     Text(
                         "Fields: float32 rms_level  float32 peak_level  float32 noise_floor_dbfs  bool voice_active",
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = StudioFonts.mono,
                         color = StudioColors.textMuted,
                         fontSize = StudioTypeSize.caption
                     )
@@ -251,11 +265,12 @@ private fun toDbFS(level: Float): Float {
 @Composable
 private fun VuMeterBar(label: String, levelDb: Float, color: Color) {
     val fraction = ((levelDb + 60f) / 60f).coerceIn(0f, 1f)
+    val canvasColor = StudioColors.canvas
     Row(modifier = Modifier.fillMaxWidth().height(26.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(label, modifier = Modifier.width(90.dp), fontSize = StudioTypeSize.supporting,
              color = MaterialTheme.colorScheme.onSurfaceVariant)
         Canvas(modifier = Modifier.weight(1f).height(14.dp)) {
-            drawRoundRect(StudioColors.canvas, size = size,
+            drawRoundRect(canvasColor, size = size,
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f))
             if (fraction > 0f) {
                 drawRoundRect(
@@ -266,18 +281,19 @@ private fun VuMeterBar(label: String, levelDb: Float, color: Color) {
             }
         }
         Text("${"%.0f".format(levelDb)}dB", modifier = Modifier.width(56.dp),
-             fontFamily = FontFamily.Monospace, fontSize = StudioTypeSize.caption, color = color)
+             fontFamily = StudioFonts.mono, fontSize = StudioTypeSize.caption, color = color)
     }
 }
 
 @Composable
 private fun MicWaveformCanvas(history: List<Float>, modifier: Modifier) {
+    val gridColor = StudioColors.border
     Canvas(modifier = modifier.background(StudioColors.canvas, MaterialTheme.shapes.medium).padding(10.dp)) {
         if (history.size < 2) return@Canvas
         val pad = 8f
         val w = size.width - pad * 2f
         val h = size.height - pad * 2f
-        drawLine(StudioColors.border, Offset(pad, pad + h / 2f), Offset(pad + w, pad + h / 2f), 1f)
+        drawLine(gridColor, Offset(pad, pad + h / 2f), Offset(pad + w, pad + h / 2f), 1f)
         val path = Path()
         history.forEachIndexed { index, rms ->
             val x = pad + w * index / max(1, history.lastIndex)
@@ -304,8 +320,8 @@ private fun MicStatusChip(label: String, value: String, modifier: Modifier = Mod
             .padding(horizontal = StudioSpacing.md, vertical = StudioSpacing.sm),
         verticalArrangement = Arrangement.spacedBy(StudioSpacing.xxs),
     ) {
-        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+        Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, maxLines = 1, softWrap = false)
     }
 }
 
@@ -315,6 +331,6 @@ private fun StatItemMic(label: String, value: String, modifier: Modifier = Modif
         Text(label.uppercase(), style = MaterialTheme.typography.labelSmall,
              color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, style = MaterialTheme.typography.titleSmall,
-             fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold)
+             fontFamily = StudioFonts.mono, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false)
     }
 }

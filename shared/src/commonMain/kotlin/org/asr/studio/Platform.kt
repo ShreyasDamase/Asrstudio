@@ -28,3 +28,7 @@ expect fun playMonitorFeedback(active: Boolean)
  * Streams real 16 kHz 16-bit PCM audio samples directly to the desktop speaker (SourceDataLine).
  */
 expect fun playAudioPcm(pcmBytes: ByteArray, offset: Int, length: Int)
+
+expect fun loadStudioThemePreference(): Boolean
+
+expect fun saveStudioThemePreference(isDarkTheme: Boolean)

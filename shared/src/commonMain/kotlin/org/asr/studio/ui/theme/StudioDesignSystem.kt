@@ -5,32 +5,38 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.jetbrains.compose.resources.Font
+import org.asr.studio.generated.resources.Res
+import org.asr.studio.generated.resources.space_grotesk
+import org.asr.studio.generated.resources.space_mono
 
 /** Shared visual tokens for every ASR Studio screen. Keep UI styling decisions here. */
 object StudioColors {
-    val canvas = Color(0xFF101316)
-    val panel = Color(0xFF171B20)
-    val panelRaised = Color(0xFF1D2329)
-    val panelInset = Color(0xFF12171B)
-    val border = Color(0xFF303840)
-    val borderStrong = Color(0xFF46515B)
+    val canvas: Color @Composable get() = MaterialTheme.colorScheme.background
+    val panel: Color @Composable get() = MaterialTheme.colorScheme.surface
+    val panelRaised: Color @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+    val panelInset: Color @Composable get() = MaterialTheme.colorScheme.background
+    val border: Color @Composable get() = MaterialTheme.colorScheme.outlineVariant
+    val borderStrong: Color @Composable get() = MaterialTheme.colorScheme.outline
+    val textPrimary: Color @Composable get() = MaterialTheme.colorScheme.onSurface
+    val textSecondary: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+    val textMuted: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.68f)
 
-    val textPrimary = Color(0xFFE4E8EC)
-    val textSecondary = Color(0xFFA4ADB6)
-    val textMuted = Color(0xFF77828C)
-
-    val accent = Color(0xFF77CFC2)
-    val accentText = Color(0xFF9ADBD1)
-    val accentSurface = Color(0xFF203331)
+    val accent = Color(0xFFD71921)
+    val accentText: Color @Composable get() = MaterialTheme.colorScheme.onPrimaryContainer
+    val accentSurface: Color @Composable get() = MaterialTheme.colorScheme.primaryContainer
     val success = Color(0xFF78BD9B)
     val successSurface = Color(0xFF1D3029)
     val warning = Color(0xFFD4B36C)
     val warningSurface = Color(0xFF332F24)
-    val error = Color(0xFFD27D7D)
+    val error: Color @Composable get() = MaterialTheme.colorScheme.error
     val errorSurface = Color(0xFF352626)
     val info = Color(0xFF8FB8D8)
 
@@ -43,7 +49,7 @@ object StudioColors {
     val plotCrosshair = accent.copy(alpha = 0.34f)
     val plotHalo = accent.copy(alpha = 0.20f)
     val plotMarker = Color(0xFF4A5362)
-    val quaternionW = textPrimary
+    val quaternionW: Color @Composable get() = MaterialTheme.colorScheme.onSurface
     val globeOcean = Color(0xFF102632)
     val globeLand = Color(0xFF22170D)
     val sceneFaceFront = Color(0xFF131722)
@@ -66,12 +72,19 @@ object StudioColors {
     val modelPhone = Color(0xFF020617)
 }
 
+object StudioFonts {
+    val body: FontFamily
+        @Composable get() = FontFamily(Font(Res.font.space_grotesk, FontWeight.Normal))
+    val mono: FontFamily
+        @Composable get() = FontFamily(Font(Res.font.space_mono, FontWeight.Normal))
+}
+
 object StudioRadii {
     /** Buttons, inputs, selected navigation rows and compact status labels. */
-    val control = 2.dp
+    val control = 4.dp
 
     /** Panels and cards: restrained desktop corners, never pill-shaped. */
-    val panel = 2.dp
+    val panel = 12.dp
 
     val controlShape = RoundedCornerShape(control)
     val panelShape = RoundedCornerShape(panel)
@@ -110,42 +123,71 @@ object StudioIconSize {
 }
 
 @Composable
-fun AsrStudioTheme(content: @Composable () -> Unit) {
+fun AsrStudioTheme(
+    darkTheme: Boolean = true,
+    content: @Composable () -> Unit,
+) {
     val typography = Typography()
-    MaterialTheme(
-        colorScheme = darkColorScheme(
+    val colorScheme = if (darkTheme) {
+        darkColorScheme(
             primary = StudioColors.accent,
-            onPrimary = StudioColors.canvas,
+            onPrimary = Color.White,
             secondary = StudioColors.warning,
-            onSecondary = StudioColors.canvas,
+            onSecondary = Color(0xFF000000),
             tertiary = StudioColors.info,
-            background = StudioColors.canvas,
-            onBackground = StudioColors.textPrimary,
-            surface = StudioColors.panel,
-            onSurface = StudioColors.textPrimary,
-            surfaceVariant = StudioColors.panelRaised,
-            onSurfaceVariant = StudioColors.textSecondary,
-            outline = StudioColors.borderStrong,
-            outlineVariant = StudioColors.border,
-            error = StudioColors.error,
+            background = Color(0xFF000000),
+            onBackground = Color(0xFFE8E8E8),
+            surface = Color(0xFF111111),
+            onSurface = Color(0xFFE8E8E8),
+            surfaceVariant = Color(0xFF1A1A1A),
+            onSurfaceVariant = Color(0xFF999999),
+            outline = Color(0xFF333333),
+            outlineVariant = Color(0xFF222222),
+            error = Color(0xFFD27D7D),
             errorContainer = StudioColors.errorSurface,
-            onErrorContainer = StudioColors.textPrimary,
-            primaryContainer = StudioColors.accentSurface,
-            onPrimaryContainer = StudioColors.accentText,
+            onErrorContainer = Color(0xFFE8E8E8),
+            primaryContainer = Color(0xFF321416),
+            onPrimaryContainer = Color(0xFFFFB3B4),
             secondaryContainer = StudioColors.warningSurface,
-            onSecondaryContainer = StudioColors.textPrimary,
-        ),
+            onSecondaryContainer = Color(0xFFE8E8E8),
+        )
+    } else {
+        lightColorScheme(
+            primary = StudioColors.accent,
+            onPrimary = Color.White,
+            secondary = StudioColors.warning,
+            onSecondary = Color(0xFF1A1A1A),
+            tertiary = StudioColors.info,
+            background = Color(0xFFF5F5F5),
+            onBackground = Color(0xFF1A1A1A),
+            surface = Color(0xFFFFFFFF),
+            onSurface = Color(0xFF1A1A1A),
+            surfaceVariant = Color(0xFFF0F0F0),
+            onSurfaceVariant = Color(0xFF666666),
+            outline = Color(0xFFCCCCCC),
+            outlineVariant = Color(0xFFE8E8E8),
+            error = StudioColors.accent,
+            errorContainer = Color(0xFFFFE6E6),
+            onErrorContainer = Color(0xFF1A1A1A),
+            primaryContainer = Color(0xFFFBE9E9),
+            onPrimaryContainer = Color(0xFF8F1117),
+            secondaryContainer = Color(0xFFFFF3D7),
+            onSecondaryContainer = Color(0xFF1A1A1A),
+        )
+    }
+    MaterialTheme(
+        colorScheme = colorScheme,
         typography = typography.copy(
-            titleLarge = typography.titleLarge.copy(fontSize = StudioTypeSize.page),
-            titleMedium = typography.titleMedium.copy(fontSize = StudioTypeSize.section),
-            headlineSmall = typography.headlineSmall.copy(fontSize = StudioTypeSize.metric),
-            headlineMedium = typography.headlineMedium.copy(fontSize = 26.sp),
-            bodyLarge = typography.bodyLarge.copy(fontSize = StudioTypeSize.body),
-            bodyMedium = typography.bodyMedium.copy(fontSize = StudioTypeSize.body),
-            bodySmall = typography.bodySmall.copy(fontSize = StudioTypeSize.supporting),
-            labelLarge = typography.labelLarge.copy(fontSize = StudioTypeSize.controlLabel),
-            labelMedium = typography.labelMedium.copy(fontSize = StudioTypeSize.supporting),
-            labelSmall = typography.labelSmall.copy(fontSize = StudioTypeSize.caption),
+            titleLarge = typography.titleLarge.copy(fontFamily = StudioFonts.body, fontSize = StudioTypeSize.page),
+            titleMedium = typography.titleMedium.copy(fontFamily = StudioFonts.body, fontSize = StudioTypeSize.section),
+            headlineSmall = typography.headlineSmall.copy(fontFamily = StudioFonts.mono, fontSize = StudioTypeSize.metric),
+            headlineMedium = typography.headlineMedium.copy(fontFamily = StudioFonts.mono, fontSize = 26.sp),
+            bodyLarge = typography.bodyLarge.copy(fontFamily = StudioFonts.body, fontSize = StudioTypeSize.body),
+            bodyMedium = typography.bodyMedium.copy(fontFamily = StudioFonts.body, fontSize = StudioTypeSize.body),
+            bodySmall = typography.bodySmall.copy(fontFamily = StudioFonts.body, fontSize = StudioTypeSize.supporting),
+            labelLarge = typography.labelLarge.copy(fontFamily = StudioFonts.mono, fontSize = StudioTypeSize.controlLabel),
+            labelMedium = typography.labelMedium.copy(fontFamily = StudioFonts.mono, fontSize = StudioTypeSize.supporting),
+            labelSmall = typography.labelSmall.copy(fontFamily = StudioFonts.mono, fontSize = StudioTypeSize.caption),
         ),
         shapes = Shapes(
             extraSmall = StudioRadii.controlShape,

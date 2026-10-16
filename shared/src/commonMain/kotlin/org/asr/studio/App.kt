@@ -14,9 +14,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PhotoCamera
@@ -26,6 +29,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -47,6 +51,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.asr.studio.data.StudioService
+import org.asr.studio.loadStudioThemePreference
+import org.asr.studio.saveStudioThemePreference
 import org.asr.studio.ui.camera.CameraScreen
 import org.asr.studio.ui.camera.CameraViewModel
 import org.asr.studio.ui.devices.DevicesScreen
@@ -62,6 +68,7 @@ import org.asr.studio.ui.speaker.SpeakerScreen
 import org.asr.studio.ui.speaker.SpeakerViewModel
 import org.asr.studio.ui.theme.AsrStudioTheme
 import org.asr.studio.ui.theme.StudioColors
+import org.asr.studio.ui.theme.StudioFonts
 import org.asr.studio.ui.theme.StudioIconSize
 import org.asr.studio.ui.theme.StudioSpacing
 
@@ -154,7 +161,9 @@ fun App() {
     val cameraViewModel = remember { CameraViewModel(studioService) }
     val speakerViewModel = remember { SpeakerViewModel(studioService) }
 
-    AsrStudioTheme {
+    var darkTheme by remember { mutableStateOf(loadStudioThemePreference()) }
+
+    AsrStudioTheme(darkTheme = darkTheme) {
         var selectedScreen by remember { mutableStateOf(AppScreen.Dashboard) }
 
         Surface(modifier = Modifier.fillMaxSize()) {
@@ -172,7 +181,12 @@ fun App() {
                 Column(modifier = Modifier.fillMaxSize()) {
                     TitleBar(
                         screen = selectedScreen,
-                        studioService = studioService
+                        studioService = studioService,
+                        darkTheme = darkTheme,
+                        onThemeToggle = {
+                            darkTheme = !darkTheme
+                            saveStudioThemePreference(darkTheme)
+                        },
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     ScreenContent(
@@ -202,7 +216,7 @@ private fun Sidebar(
         modifier = Modifier
             .width(220.dp)
             .fillMaxHeight()
-            .background(StudioColors.panel)
+            .background(MaterialTheme.colorScheme.surface)
             .padding(horizontal = StudioSpacing.md, vertical = StudioSpacing.lg),
     ) {
         Text(
@@ -226,6 +240,7 @@ private fun Sidebar(
                 color = StudioColors.textMuted,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 0.8.sp,
+                fontFamily = StudioFonts.mono,
             )
             AppScreen.entries.filter { it.group == group }.forEach { screen ->
                 NavigationItem(
@@ -245,9 +260,9 @@ private fun NavigationItem(
     onClick: () -> Unit,
 ) {
     val background =
-        if (selected) StudioColors.accentSurface else Color.Transparent
+        if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
     val contentColor =
-        if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+        if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
 
     Row(
         modifier = Modifier
@@ -266,10 +281,11 @@ private fun NavigationItem(
         )
         Spacer(modifier = Modifier.width(StudioSpacing.md))
         Text(
-            text = screen.label,
+            text = screen.label.uppercase(),
             color = contentColor,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            fontFamily = StudioFonts.body,
         )
     }
 }
@@ -277,7 +293,9 @@ private fun NavigationItem(
 @Composable
 private fun TitleBar(
     screen: AppScreen,
-    studioService: StudioService
+    studioService: StudioService,
+    darkTheme: Boolean,
+    onThemeToggle: () -> Unit,
 ) {
     val connectionState by studioService.tcpClient.connectionState.collectAsState()
 
@@ -288,9 +306,9 @@ private fun TitleBar(
             .background(MaterialTheme.colorScheme.surface)
             .padding(horizontal = StudioSpacing.page),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(StudioSpacing.md),
     ) {
-        Column {
+    Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = screen.title,
                 style = MaterialTheme.typography.titleLarge,
@@ -304,15 +322,31 @@ private fun TitleBar(
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        Text(
-            text = "TCP · " + when (connectionState) {
-                org.asr.studio.protocol.ConnectionState.Connected -> "Connected"
-                org.asr.studio.protocol.ConnectionState.Connecting -> "Connecting"
-                else -> "Disconnected"
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm),
+        ) {
+            Text(
+                text = "TCP · " + when (connectionState) {
+                    org.asr.studio.protocol.ConnectionState.Connected -> "CONNECTED"
+                    org.asr.studio.protocol.ConnectionState.Connecting -> "CONNECTING"
+                    else -> "DISCONNECTED"
+                },
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.widthIn(max = 150.dp),
+            )
+            IconButton(onClick = onThemeToggle) {
+                Icon(
+                    imageVector = if (darkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+                    contentDescription = if (darkTheme) "Switch to light theme" else "Switch to dark theme",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+        }
     }
 }
 
@@ -410,15 +444,17 @@ private fun StatusBar(studioService: StudioService) {
 private fun StatusItem(label: String, value: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
-            text = "$label:",
+            text = "${label.uppercase()}:",
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontFamily = StudioFonts.mono,
         )
         Spacer(modifier = Modifier.width(6.dp))
         Text(
             text = value,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurface,
+            fontFamily = StudioFonts.mono,
         )
     }
 }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -44,7 +46,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -62,6 +63,8 @@ import org.asr.studio.data.Diagnostics
 import org.asr.studio.data.ImuData
 import org.asr.studio.ui.theme.StudioColors
 import org.asr.studio.ui.theme.StudioRadii
+import org.asr.studio.ui.theme.StudioFonts
+import org.asr.studio.ui.theme.StudioSpacing
 import org.asr.studio.ui.theme.StudioTypeSize
 
 private enum class ImuTab(val label: String) {
@@ -97,7 +100,7 @@ fun DiagnosticsScreen(viewModel: DiagnosticsViewModel) {
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             ImuTab.entries.forEach { tab ->
@@ -206,26 +209,22 @@ private fun ImuOverview(
     history: List<ImuData>
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            SensorChip("Accelerometer", "400 Hz", imu != null, Modifier.weight(1f))
-            SensorChip("Gyroscope", "400 Hz", imu != null, Modifier.weight(1f))
-            SensorChip("Gravity", "200 Hz", imu != null, Modifier.weight(1f))
-            SensorChip("Rotation Vector", "fused", imu != null, Modifier.weight(1f))
-            SensorChip("Magnetometer", "50 Hz", imu != null, Modifier.weight(1f))
+        Row(
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            SensorChip("Accelerometer", "400 Hz", imu != null, Modifier.width(150.dp))
+            SensorChip("Gyroscope", "400 Hz", imu != null, Modifier.width(150.dp))
+            SensorChip("Gravity", "200 Hz", imu != null, Modifier.width(150.dp))
+            SensorChip("Rotation Vector", "fused", imu != null, Modifier.width(150.dp))
+            SensorChip("Magnetometer", "50 Hz", imu != null, Modifier.width(150.dp))
         }
 
         // ── Orientation Reference / Re-Zero Control Panel ────────────────────
         DiagnosticsCard {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text("Orientation Reference (Re-Zero Calibration)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text("Establishes current phone pose as robot zero pose (0°, 0°, 0°). Raw sensor data remains untouched.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-
+            Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
+                Text("Orientation Reference (Re-Zero Calibration)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text("Establishes current phone pose as robot zero pose (0°, 0°, 0°). Raw sensor data remains untouched.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Surface(
                     color = when (refState.state) {
                         org.asr.studio.math.ReferenceState.NOT_SET -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
@@ -254,95 +253,137 @@ private fun ImuOverview(
 
             Spacer(Modifier.height(14.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Button(
-                    onClick = { viewModel.setZero() },
-                    modifier = Modifier.weight(1f),
-                    enabled = imu != null,
-                    shape = StudioRadii.controlShape,
-                ) {
-                    Text("Set Current as Zero")
-                }
-
-                OutlinedButton(
-                    onClick = { viewModel.resetReference() },
-                    modifier = Modifier.weight(1f),
-                    enabled = refState.state != org.asr.studio.math.ReferenceState.NOT_SET,
-                    shape = StudioRadii.controlShape,
-                ) {
-                    Text("Reset Reference")
-                }
-
-                Button(
-                    onClick = { viewModel.saveMountCalibration() },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
-                    enabled = refState.state != org.asr.studio.math.ReferenceState.NOT_SET,
-                    shape = StudioRadii.controlShape,
-                ) {
-                    Text("Save Mount Calibration")
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val narrow = maxWidth < 680.dp
+                val calibrationActions: List<@Composable (Modifier) -> Unit> = listOf(
+                    { modifier ->
+                        Button(
+                            onClick = { viewModel.setZero() },
+                            modifier = modifier,
+                            enabled = imu != null,
+                            shape = StudioRadii.controlShape,
+                        ) {
+                            Text("Set Current as Zero", maxLines = 1, softWrap = false)
+                        }
+                    },
+                    { modifier ->
+                        OutlinedButton(
+                            onClick = { viewModel.resetReference() },
+                            modifier = modifier,
+                            enabled = refState.state != org.asr.studio.math.ReferenceState.NOT_SET,
+                            shape = StudioRadii.controlShape,
+                        ) {
+                            Text("Reset Reference", maxLines = 1, softWrap = false)
+                        }
+                    },
+                    { modifier ->
+                        Button(
+                            onClick = { viewModel.saveMountCalibration() },
+                            modifier = modifier,
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                            enabled = refState.state != org.asr.studio.math.ReferenceState.NOT_SET,
+                            shape = StudioRadii.controlShape,
+                        ) {
+                            Text("Save Mount Calibration", maxLines = 1, softWrap = false)
+                        }
+                    },
+                )
+                if (narrow) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        calibrationActions.forEach { action -> action(Modifier.fillMaxWidth()) }
+                    }
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        calibrationActions.forEach { action -> action(Modifier.weight(1f)) }
+                    }
                 }
             }
 
             Spacer(Modifier.height(14.dp))
 
             // Dual Readout: Raw Sensor Orientation vs Robot Relative Orientation
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // Raw Readout
-                val rawEuler = calibratedImu?.rawEuler ?: org.asr.studio.math.EulerAngles(0f, 0f, 0f, 0f, 0f, 0f)
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), MaterialTheme.shapes.medium)
-                        .padding(12.dp)
-                ) {
-                    Text("RAW SENSOR ORIENTATION", fontSize = StudioTypeSize.caption, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.height(4.dp))
-                    Text("Pitch: ${"%.1f".format(rawEuler.pitchDeg)}°  Roll: ${"%.1f".format(rawEuler.rollDeg)}°  Yaw: ${"%.1f".format(rawEuler.yawDeg)}°", fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold, fontSize = StudioTypeSize.controlLabel)
+            val rawEuler = calibratedImu?.rawEuler ?: org.asr.studio.math.EulerAngles(0f, 0f, 0f, 0f, 0f, 0f)
+            val relEuler = calibratedImu?.relativeEuler ?: org.asr.studio.math.EulerAngles(0f, 0f, 0f, 0f, 0f, 0f)
+            val relativeColor = if (refState.state != org.asr.studio.math.ReferenceState.NOT_SET) {
+                StudioColors.success
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            }
+            val relativeSurface = if (refState.state != org.asr.studio.math.ReferenceState.NOT_SET) {
+                StudioColors.success.copy(alpha = 0.1f)
+            } else {
+                MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+            }
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val rawReadout: @Composable (Modifier) -> Unit = { modifier ->
+                    EulerReadout(
+                        title = "RAW SENSOR ORIENTATION",
+                        value = "P ${"%.1f".format(rawEuler.pitchDeg)}°   R ${"%.1f".format(rawEuler.rollDeg)}°   Y ${"%.1f".format(rawEuler.yawDeg)}°",
+                        modifier = modifier,
+                    )
                 }
-
-                // Robot Relative Readout
-                val relEuler = calibratedImu?.relativeEuler ?: org.asr.studio.math.EulerAngles(0f, 0f, 0f, 0f, 0f, 0f)
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .background(
-                            if (refState.state != org.asr.studio.math.ReferenceState.NOT_SET) StudioColors.success.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
-                            MaterialTheme.shapes.medium
-                        )
-                        .padding(12.dp)
-                ) {
-                    Text("ROBOT RELATIVE ORIENTATION (CALIBRATED)", fontSize = StudioTypeSize.caption, fontWeight = FontWeight.Bold, color = if (refState.state != org.asr.studio.math.ReferenceState.NOT_SET) StudioColors.success else MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.height(4.dp))
-                    Text("Pitch: ${"%.1f".format(relEuler.pitchDeg)}°  Roll: ${"%.1f".format(relEuler.rollDeg)}°  Yaw: ${"%.1f".format(relEuler.yawDeg)}°", fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = StudioTypeSize.controlLabel, color = if (refState.state != org.asr.studio.math.ReferenceState.NOT_SET) StudioColors.success else MaterialTheme.colorScheme.onSurface)
+                val relativeReadout: @Composable (Modifier) -> Unit = { modifier ->
+                    EulerReadout(
+                        title = "ROBOT RELATIVE ORIENTATION (CALIBRATED)",
+                        value = "P ${"%.1f".format(relEuler.pitchDeg)}°   R ${"%.1f".format(relEuler.rollDeg)}°   Y ${"%.1f".format(relEuler.yawDeg)}°",
+                        modifier = modifier,
+                        valueColor = relativeColor,
+                        containerColor = relativeSurface,
+                    )
+                }
+                if (maxWidth < 680.dp) {
+                    Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
+                        rawReadout(Modifier.fillMaxWidth())
+                        relativeReadout(Modifier.fillMaxWidth())
+                    }
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        rawReadout(Modifier.weight(1f))
+                        relativeReadout(Modifier.weight(1f))
+                    }
                 }
             }
         }
 
         DiagnosticsCard {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Live device orientation", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.width(10.dp))
-                Badge("IMU")
-                Spacer(Modifier.weight(1f))
-                Text("Drag to orbit · scroll to zoom", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.xs)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Live device orientation", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.width(10.dp))
+                    Badge("IMU")
+                }
+                Text(
+                    "Drag to orbit · scroll to zoom",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                    softWrap = false,
+                )
             }
+
             Spacer(Modifier.height(12.dp))
             OrientationCanvas(imu, modifier = Modifier.fillMaxWidth().height(420.dp))
             AxisLegend()
             Spacer(Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                PhonePosePanel(imu, modifier = Modifier.weight(1f))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Euler angles", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                    Spacer(Modifier.height(8.dp))
-                    EulerCards(imu)
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                if (maxWidth < 680.dp) {
+                    Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.md)) {
+                        PhonePosePanel(imu, modifier = Modifier.fillMaxWidth())
+                        Column {
+                            Text("Euler angles", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                            Spacer(Modifier.height(8.dp))
+                            EulerCards(imu)
+                        }
+                    }
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        PhonePosePanel(imu, modifier = Modifier.weight(1f))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Euler angles", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                            Spacer(Modifier.height(8.dp))
+                            EulerCards(imu)
+                        }
+                    }
                 }
             }
         }
@@ -350,13 +391,26 @@ private fun ImuOverview(
         DiagnosticsCard {
             Text("Gravity vs. Linear Acceleration", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(14.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                VectorSummary("Accelerometer", "RAW", imu?.accelX ?: 0f, imu?.accelY ?: 0f, imu?.accelZ ?: 0f, Modifier.weight(1f))
-                VectorSummary("Gravity", "DERIVED", imu?.gravityX ?: 0f, imu?.gravityY ?: 0f, imu?.gravityZ ?: 0f, Modifier.weight(1f))
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                 val lx = (imu?.accelX ?: 0f) - (imu?.gravityX ?: 0f)
                 val ly = (imu?.accelY ?: 0f) - (imu?.gravityY ?: 0f)
                 val lz = (imu?.accelZ ?: 0f) - (imu?.gravityZ ?: 0f)
-                VectorSummary("Linear Acceleration", "DERIVED", lx, ly, lz, Modifier.weight(1f))
+                val summaries: List<@Composable (Modifier) -> Unit> = listOf(
+                    { modifier -> VectorSummary("Accelerometer", "RAW", imu?.accelX ?: 0f, imu?.accelY ?: 0f, imu?.accelZ ?: 0f, modifier) },
+                    { modifier -> VectorSummary("Gravity", "DERIVED", imu?.gravityX ?: 0f, imu?.gravityY ?: 0f, imu?.gravityZ ?: 0f, modifier) },
+                    { modifier -> VectorSummary("Linear Acceleration", "DERIVED", lx, ly, lz, modifier) },
+                )
+                val columns = if (maxWidth < 680.dp) 1 else 3
+                Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
+                    summaries.chunked(columns).forEach { rowItems ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            rowItems.forEach { item -> item(Modifier.weight(1f)) }
+                        }
+                    }
+                }
             }
             Spacer(Modifier.height(10.dp))
             Text(
@@ -369,15 +423,45 @@ private fun ImuOverview(
         DiagnosticsCard {
             Text("Raw & Protocol Diagnostics", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(14.dp))
-            Row(modifier = Modifier.fillMaxWidth()) {
-                StatItem("Packet Rate", "${"%.1f".format(diag.packetRate)} pps", Modifier.weight(1f))
-                StatItem("Byte Rate", "${"%.1f".format(diag.byteRate / 1024.0)} kbps", Modifier.weight(1f))
-                StatItem("Total Drops", diag.dropCount.toString(), Modifier.weight(1f))
-                StatItem("Heartbeat", if (diag.lastHeartbeatTimeMs > 0) "${(currentTimeMillis() - diag.lastHeartbeatTimeMs) / 1000}s ago" else "Never", Modifier.weight(1f))
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val stats = listOf(
+                    "Packet Rate" to "${"%.1f".format(diag.packetRate)} pps",
+                    "Byte Rate" to "${"%.1f".format(diag.byteRate / 1024.0)} kbps",
+                    "Total Drops" to diag.dropCount.toString(),
+                    "Heartbeat" to if (diag.lastHeartbeatTimeMs > 0) "${(currentTimeMillis() - diag.lastHeartbeatTimeMs) / 1000}s ago" else "Never",
+                )
+                val columns = if (maxWidth < 680.dp) 2 else 4
+                Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.md)) {
+                    stats.chunked(columns).forEach { rowStats ->
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
+                            rowStats.forEach { (label, value) -> StatItem(label, value, Modifier.weight(1f)) }
+                            repeat(columns - rowStats.size) { Spacer(Modifier.weight(1f)) }
+                        }
+                    }
+                }
             }
             Spacer(Modifier.height(14.dp))
             MiniHistoryStrip(history)
         }
+    }
+}
+
+@Composable
+private fun EulerReadout(
+    title: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    valueColor: Color = MaterialTheme.colorScheme.onSurface,
+    containerColor: Color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+) {
+    Column(
+        modifier = modifier
+            .background(containerColor, MaterialTheme.shapes.medium)
+            .padding(12.dp),
+    ) {
+        Text(title, fontSize = StudioTypeSize.caption, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(4.dp))
+        Text(value, fontFamily = StudioFonts.mono, fontWeight = FontWeight.SemiBold, fontSize = StudioTypeSize.controlLabel, color = valueColor, maxLines = 1, softWrap = false)
     }
 }
 
@@ -398,32 +482,72 @@ private fun VectorSensorTab(
     relation: String,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-            DiagnosticsCard(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.width(10.dp))
-                    Badge(badge)
-                    Spacer(Modifier.weight(1f))
-                    Text("$rate · $unit", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-                }
-                Spacer(Modifier.height(16.dp))
-                AxisBar("X", x, range, AxisX)
-                AxisBar("Y", y, range, AxisY)
-                AxisBar("Z", z, range, AxisZ)
-                Spacer(Modifier.height(18.dp))
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    StatItem("Sampling Rate", rate, Modifier.weight(1f))
-                    StatItem("Calibration", "Good", Modifier.weight(1f))
-                    StatItem("Packet Rate", "${"%.1f".format(packetRate)} pps", Modifier.weight(1f))
-                    StatItem("Magnitude", "${"%.2f".format(magnitude)} $unit", Modifier.weight(1f))
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val compact = maxWidth < 820.dp
+            val sensorCard: @Composable (Modifier) -> Unit = { cardModifier ->
+                DiagnosticsCard(modifier = cardModifier) {
+                    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                        if (maxWidth < 560.dp) {
+                            Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.xs)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    Spacer(Modifier.width(10.dp))
+                                    Badge(badge)
+                                }
+                                Text("$rate · $unit", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                            }
+                        } else {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Spacer(Modifier.width(10.dp))
+                                Badge(badge)
+                                Spacer(Modifier.weight(1f))
+                                Text("$rate · $unit", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    AxisBar("X", x, range, AxisX)
+                    AxisBar("Y", y, range, AxisY)
+                    AxisBar("Z", z, range, AxisZ)
+                    Spacer(Modifier.height(18.dp))
+                    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                        val stats = listOf(
+                            "Sampling Rate" to rate,
+                            "Calibration" to "Good",
+                            "Packet Rate" to "${"%.1f".format(packetRate)} pps",
+                            "Magnitude" to "${"%.2f".format(magnitude)} $unit",
+                        )
+                        val columns = if (maxWidth < 620.dp) 2 else 4
+                        Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.md)) {
+                            stats.chunked(columns).forEach { rowStats ->
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
+                                    rowStats.forEach { (label, value) -> StatItem(label, value, Modifier.weight(1f)) }
+                                    repeat(columns - rowStats.size) { Spacer(Modifier.weight(1f)) }
+                                }
+                            }
+                        }
+                    }
                 }
             }
-            DiagnosticsCard(modifier = Modifier.weight(1f)) {
-                Text("Time Series", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(14.dp))
-                TimeSeriesCanvas(history, range, Modifier.fillMaxWidth().height(210.dp))
-                AxisLegend(endLabel = "range +/-${range.toInt()} $unit")
+            val chartCard: @Composable (Modifier) -> Unit = { cardModifier ->
+                DiagnosticsCard(modifier = cardModifier) {
+                    Text("Time Series", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(14.dp))
+                    TimeSeriesCanvas(history, range, Modifier.fillMaxWidth().height(210.dp))
+                    AxisLegend(endLabel = "range +/-${range.toInt()} $unit")
+                }
+            }
+            if (compact) {
+                Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                    sensorCard(Modifier.fillMaxWidth())
+                    chartCard(Modifier.fillMaxWidth())
+                }
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                    sensorCard(Modifier.weight(1f))
+                    chartCard(Modifier.weight(1f))
+                }
             }
         }
         DiagnosticsCard {
@@ -523,7 +647,7 @@ private fun SensorChip(label: String, meta: String, active: Boolean, modifier: M
         Text(
             if (active) meta else "No data",
             color = if (active) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.outline,
-            fontFamily = FontFamily.Monospace,
+            fontFamily = StudioFonts.mono,
             fontSize = StudioTypeSize.caption,
             maxLines = 1,
             softWrap = false,
@@ -533,37 +657,42 @@ private fun SensorChip(label: String, meta: String, active: Boolean, modifier: M
 
 @Composable
 private fun AxisBar(label: String, value: Float, range: Float, color: Color) {
+    val canvasColor = StudioColors.canvas
+    val borderColor = StudioColors.borderStrong
     Row(modifier = Modifier.fillMaxWidth().height(30.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(label, modifier = Modifier.width(24.dp), color = color, fontWeight = FontWeight.Bold)
         Canvas(modifier = Modifier.weight(1f).height(16.dp)) {
             val centerX = size.width / 2f
-            drawRoundRect(StudioColors.canvas, size = size, cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f))
-            drawLine(StudioColors.borderStrong, Offset(centerX, 0f), Offset(centerX, size.height), strokeWidth = 1.2f)
+            drawRoundRect(canvasColor, size = size, cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f))
+            drawLine(borderColor, Offset(centerX, 0f), Offset(centerX, size.height), strokeWidth = 1.2f)
             val clamped = value.coerceIn(-range, range)
             val end = centerX + (clamped / range) * centerX
             drawLine(color, Offset(centerX, size.height / 2f), Offset(end, size.height / 2f), strokeWidth = size.height, cap = StrokeCap.Round)
         }
-        Text(formatNumber(value), modifier = Modifier.width(82.dp), fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold)
+        Text(formatNumber(value), modifier = Modifier.width(82.dp), fontFamily = StudioFonts.mono, fontWeight = FontWeight.SemiBold)
     }
 }
 
 @Composable
 private fun QuaternionBar(label: String, value: Float, color: Color) {
+    val canvasColor = StudioColors.canvas
+    val borderColor = StudioColors.borderStrong
     Row(modifier = Modifier.fillMaxWidth().height(30.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(label, modifier = Modifier.width(26.dp), color = color, fontWeight = FontWeight.Bold)
         Canvas(modifier = Modifier.weight(1f).height(15.dp)) {
             val centerX = size.width / 2f
-            drawRoundRect(StudioColors.canvas, size = size, cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f))
-            drawLine(StudioColors.borderStrong, Offset(centerX, 0f), Offset(centerX, size.height), strokeWidth = 1.1f)
+            drawRoundRect(canvasColor, size = size, cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f))
+            drawLine(borderColor, Offset(centerX, 0f), Offset(centerX, size.height), strokeWidth = 1.1f)
             val end = centerX + value.coerceIn(-1f, 1f) * centerX
             drawLine(color, Offset(centerX, size.height / 2f), Offset(end, size.height / 2f), strokeWidth = size.height, cap = StrokeCap.Round)
         }
-        Text(formatNumber(value), modifier = Modifier.width(70.dp), fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold)
+        Text(formatNumber(value), modifier = Modifier.width(70.dp), fontFamily = StudioFonts.mono, fontWeight = FontWeight.SemiBold)
     }
 }
 
 @Composable
 private fun TimeSeriesCanvas(values: List<Triple<Float, Float, Float>>, range: Float, modifier: Modifier) {
+    val gridColor = StudioColors.border
     Canvas(modifier = modifier.background(StudioColors.canvas, MaterialTheme.shapes.medium).padding(10.dp)) {
         val pad = 18f
         val left = pad
@@ -572,7 +701,7 @@ private fun TimeSeriesCanvas(values: List<Triple<Float, Float, Float>>, range: F
         val height = size.height - pad * 2f
         repeat(3) { i ->
             val y = top + height * (i + 1) / 4f
-            drawLine(StudioColors.border, Offset(left, y), Offset(left + width, y), strokeWidth = 1f)
+            drawLine(gridColor, Offset(left, y), Offset(left + width, y), strokeWidth = 1f)
         }
         fun drawSeries(points: List<Float>, color: Color) {
             if (points.size < 2) return
@@ -693,7 +822,7 @@ private fun PoseMetric(label: String, value: String, modifier: Modifier = Modifi
             maxLines = 1,
             softWrap = false,
         )
-        Text(value, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold, fontSize = StudioTypeSize.compactMetric, maxLines = 1)
+        Text(value, fontFamily = StudioFonts.mono, fontWeight = FontWeight.SemiBold, fontSize = StudioTypeSize.compactMetric, maxLines = 1)
     }
 }
 
@@ -717,7 +846,7 @@ private fun AngleCard(label: String, value: Float, color: Color, modifier: Modif
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(label, color = color, fontSize = StudioTypeSize.supporting, fontWeight = FontWeight.Bold)
-        Text("${"%.1f".format(value)} deg", fontFamily = FontFamily.Monospace, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        Text("${"%.1f".format(value)} deg", fontFamily = StudioFonts.mono, fontSize = 20.sp, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -739,7 +868,7 @@ private fun Badge(text: String) {
 private fun ValueRow(label: String, value: Float) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(formatNumber(value), fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold)
+        Text(formatNumber(value), fontFamily = StudioFonts.mono, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -747,7 +876,7 @@ private fun ValueRow(label: String, value: Float) {
 private fun StatItem(label: String, value: String, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
         Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.titleMedium, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold)
+        Text(value, style = MaterialTheme.typography.titleMedium, fontFamily = StudioFonts.mono, fontWeight = FontWeight.SemiBold)
     }
 }
 

@@ -10,7 +10,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -19,6 +18,7 @@ import org.asr.studio.data.LightSensorData
 import org.asr.studio.ui.theme.StudioColors
 import org.asr.studio.ui.theme.StudioSpacing
 import org.asr.studio.ui.theme.StudioTypeSize
+import org.asr.studio.ui.theme.StudioFonts
 import org.asr.studio.ui.theme.StudioRadii
 import org.asr.studio.ui.components.StudioToggle
 
@@ -133,7 +133,7 @@ private fun LightingPanel(
                 text = if (lux != null) "${"%.0f".format(lux)} lux" else "No data",
                 style = MaterialTheme.typography.bodySmall,
                 color = StudioColors.textPrimary,
-                fontFamily = FontFamily.Monospace,
+                fontFamily = StudioFonts.mono,
             )
         }
         if (lux != null) {
@@ -189,6 +189,6 @@ private fun MetadataText(label: String, value: String) {
         text = "$label: $value",
         color = StudioColors.textPrimary,
         fontSize = StudioTypeSize.supporting,
-        fontFamily = FontFamily.Monospace
+        fontFamily = StudioFonts.mono
     )
 }
