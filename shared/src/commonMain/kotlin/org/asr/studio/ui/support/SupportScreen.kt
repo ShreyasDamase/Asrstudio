@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocalCafe
 import androidx.compose.material3.Button
@@ -43,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -152,7 +154,7 @@ private fun SupportHeroCopy(
             lineHeight = MaterialTheme.typography.headlineMedium.lineHeight,
         )
         Text(
-            "ASR Studio is built to make device data easier to understand. If it has made your work a little easier, an optional coffee helps support the time behind its fixes and future improvements.",
+            "If ASR Studio makes your work easier, your support helps fund maintenance, bug fixes, and future improvements.",
             style = MaterialTheme.typography.bodyMedium,
             color = HeroMuted,
         )
@@ -160,12 +162,17 @@ private fun SupportHeroCopy(
             Icon(Icons.Default.LocalCafe, contentDescription = null)
             Spacer(Modifier.size(10.dp))
             Text("BUY ME A COFFEE")
+            Spacer(Modifier.size(8.dp))
+            Icon(
+                Icons.AutoMirrored.Filled.OpenInNew,
+                contentDescription = "Opens in browser",
+                modifier = Modifier.size(16.dp),
+            )
         }
         Text(
-            "OPTIONAL · OPENS BUY ME A COFFEE",
-            style = MaterialTheme.typography.labelSmall,
+            "Optional support · Opens in your browser",
+            style = MaterialTheme.typography.bodySmall,
             color = HeroMuted,
-            fontFamily = StudioFonts.mono,
         )
     }
 }
@@ -183,14 +190,14 @@ private fun CoffeeMugArtwork(
         label = "coffee-mug-tilt",
     )
     val steamTransition = rememberInfiniteTransition(label = "coffee-steam")
-    val steamAlpha by steamTransition.animateFloat(
-        initialValue = 0.28f,
-        targetValue = 0.78f,
+    val steamProgress by steamTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1500),
-            repeatMode = RepeatMode.Reverse,
+            animation = tween(durationMillis = 2400),
+            repeatMode = RepeatMode.Restart,
         ),
-        label = "coffee-steam-alpha",
+        label = "coffee-steam-progress",
     )
 
     LaunchedEffect(tapCount) {
@@ -242,20 +249,29 @@ private fun CoffeeMugArtwork(
             val mugColor = HeroWhite
             val mugHandleLeft = mugLeft + mugWidth * 0.86f
 
-            drawLine(
-                color = mugColor.copy(alpha = steamAlpha),
-                start = androidx.compose.ui.geometry.Offset(size.width * 0.43f, size.height * 0.3f),
-                end = androidx.compose.ui.geometry.Offset(size.width * 0.46f, size.height * 0.23f),
-                strokeWidth = strokeWidth * 0.65f,
-                cap = StrokeCap.Square,
-            )
-            drawLine(
-                color = mugColor.copy(alpha = steamAlpha),
-                start = androidx.compose.ui.geometry.Offset(size.width * 0.56f, size.height * 0.31f),
-                end = androidx.compose.ui.geometry.Offset(size.width * 0.59f, size.height * 0.22f),
-                strokeWidth = strokeWidth * 0.65f,
-                cap = StrokeCap.Square,
-            )
+            repeat(2) { wisp ->
+                val progress = (steamProgress + wisp * 0.5f) % 1f
+                val startX = size.width * if (wisp == 0) 0.43f else 0.57f
+                val startY = size.height * (0.37f - progress * 0.14f)
+                val endY = startY - size.height * 0.09f
+                val fade = (1f - kotlin.math.abs(progress * 2f - 1f)) * 0.8f
+                val vapor = Path().apply {
+                    moveTo(startX, startY)
+                    cubicTo(
+                        startX - size.width * 0.035f,
+                        startY - size.height * 0.025f,
+                        startX + size.width * 0.035f,
+                        endY + size.height * 0.025f,
+                        startX,
+                        endY,
+                    )
+                }
+                drawPath(
+                    path = vapor,
+                    color = mugColor.copy(alpha = fade),
+                    style = Stroke(width = strokeWidth * 0.65f, cap = StrokeCap.Square),
+                )
+            }
             drawRoundRect(
                 color = mugColor,
                 topLeft = androidx.compose.ui.geometry.Offset(mugLeft, mugTop),
@@ -303,23 +319,22 @@ private fun SupportDetails() {
             fontWeight = FontWeight.Bold,
         )
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val compact = maxWidth < 620.dp
-            if (compact) {
+            if (maxWidth < 620.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     SupportDetailCard(
                         number = "01",
-                        title = "Independent by design",
-                        description = "Your support helps make room for ongoing maintenance, fixes, and thoughtful improvements.",
+                        title = "Maintenance",
+                        description = "Bug fixes and future improvements.",
                     )
                     SupportDetailCard(
                         number = "02",
-                        title = "Always your choice",
-                        description = "ASR Studio is useful with or without a contribution. No features are locked behind support.",
+                        title = "Always optional",
+                        description = "No features are locked behind support.",
                     )
                     SupportDetailCard(
                         number = "03",
-                        title = "Outside the app",
-                        description = "The button opens Buy Me a Coffee in your browser. Studio never handles payment details.",
+                        title = "Handled externally",
+                        description = "Contributions are processed outside the app.",
                     )
                 }
             } else {
@@ -327,20 +342,20 @@ private fun SupportDetails() {
                     SupportDetailCard(
                         modifier = Modifier.weight(1f).heightIn(min = 180.dp),
                         number = "01",
-                        title = "Independent by design",
-                        description = "Your support helps make room for ongoing maintenance, fixes, and thoughtful improvements.",
+                        title = "Maintenance",
+                        description = "Bug fixes and future improvements.",
                     )
                     SupportDetailCard(
                         modifier = Modifier.weight(1f).heightIn(min = 180.dp),
                         number = "02",
-                        title = "Always your choice",
-                        description = "ASR Studio is useful with or without a contribution. No features are locked behind support.",
+                        title = "Always optional",
+                        description = "No features are locked behind support.",
                     )
                     SupportDetailCard(
                         modifier = Modifier.weight(1f).heightIn(min = 180.dp),
                         number = "03",
-                        title = "Outside the app",
-                        description = "The button opens Buy Me a Coffee in your browser. Studio never handles payment details.",
+                        title = "Handled externally",
+                        description = "Contributions are processed outside the app.",
                     )
                 }
             }

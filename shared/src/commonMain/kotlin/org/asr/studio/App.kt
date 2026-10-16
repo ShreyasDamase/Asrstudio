@@ -160,7 +160,7 @@ private enum class AppScreen(
     BuyMeACoffee(
         label = "Buy Me a Coffee",
         title = "Buy Me a Coffee",
-        description = "Support the maintainer of ASR Studio.",
+        description = "Optional support for independent development.",
         icon = Icons.Default.LocalCafe,
         group = "HELP",
     ),
