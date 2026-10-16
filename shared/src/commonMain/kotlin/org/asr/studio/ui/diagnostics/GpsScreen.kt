@@ -5,7 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -85,18 +84,18 @@ fun GpsScreen(viewModel: DiagnosticsViewModel) {
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                        modifier = Modifier.fillMaxWidth().height(520.dp),
                         horizontalArrangement = Arrangement.spacedBy(18.dp),
                     ) {
-                        GpsPlotPanel(gps, history, Modifier.weight(1.35f))
-                        GpsFixDetailsPanel(gps, Modifier.weight(1f))
+                        GpsPlotPanel(gps, history, Modifier.weight(1.35f).fillMaxHeight())
+                        GpsFixDetailsPanel(gps, Modifier.weight(1f).fillMaxHeight())
                     }
                     Row(
-                        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                        modifier = Modifier.fillMaxWidth().height(320.dp),
                         horizontalArrangement = Arrangement.spacedBy(18.dp),
                     ) {
-                        GpsMotionPanel(history, Modifier.weight(1f))
-                        GpsReceiverPanel(gps, history, lastGpsReceivedAtMs, Modifier.weight(1f))
+                        GpsMotionPanel(history, Modifier.weight(1f).fillMaxHeight())
+                        GpsReceiverPanel(gps, history, lastGpsReceivedAtMs, Modifier.weight(1f).fillMaxHeight())
                     }
                 }
             }

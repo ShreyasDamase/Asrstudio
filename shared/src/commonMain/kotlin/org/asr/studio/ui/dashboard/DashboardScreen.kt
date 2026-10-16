@@ -3,7 +3,6 @@ package org.asr.studio.ui.dashboard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -171,7 +170,7 @@ fun DashboardScreen(
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 healthCards.chunked(columns).forEach { rowCards ->
                     Row(
-                        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                        modifier = Modifier.fillMaxWidth().height(152.dp),
                         horizontalArrangement = Arrangement.spacedBy(14.dp),
                     ) {
                         rowCards.forEach { card -> card(Modifier.weight(1f).fillMaxHeight()) }
@@ -250,7 +249,7 @@ fun DashboardScreen(
                     Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.md)) {
                         modules.chunked(columns).forEach { rowModules ->
                             Row(
-                                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                                modifier = Modifier.fillMaxWidth().height(112.dp),
                                 horizontalArrangement = Arrangement.spacedBy(StudioSpacing.md),
                             ) {
                                 rowModules.forEach { (name, subtext, module) ->
@@ -259,7 +258,7 @@ fun DashboardScreen(
                                         subtext = subtext,
                                         active = module.second,
                                         onToggle = { sendModuleCommand(module.first, it) },
-                                        modifier = Modifier.weight(1f),
+                                        modifier = Modifier.weight(1f).fillMaxHeight(),
                                     )
                                 }
                                 repeat(columns - rowModules.size) { Spacer(Modifier.weight(1f)) }
