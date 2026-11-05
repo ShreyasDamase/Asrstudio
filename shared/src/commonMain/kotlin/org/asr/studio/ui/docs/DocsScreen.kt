@@ -135,7 +135,7 @@ private fun GettingStartedDoc() {
 # 1. On Android: open ASR Runtime, grant needed permissions, and start Runtime.
 # 2. For the desktop app: use the TCP section in ASR Runtime and ASR Studio -> Devices.
 # 3. For ROS 2: enable Wi-Fi DDS or USB DDS separately in the phone app.
-# 4. For Wi-Fi DDS, use a normal ROS 2 node. For USB-tether diagnostics, follow the USB Link Monitor guide.
+# 4. Check with: ros2 node list. The USB Link Monitor is optional, for extra USB diagnostics.
 
 ROS_DOMAIN_ID=0
 RMW_IMPLEMENTATION=rmw_fastrtps_cpp
@@ -166,10 +166,19 @@ private fun ConnectivityDoc() {
         }
 
         DocCard(title = "ROS 2 DDS (USB and Wi-Fi)", icon = Icons.Default.Hub) {
-            DocBullet("Phone", "Enable USB DDS (with USB tethering) or Wi-Fi DDS in the phone app. State remains 'Waiting for discovery' until a ROS 2 peer listens.")
+            DocBullet("Phone", "Enable USB DDS (with USB tethering) or Wi-Fi DDS in the phone app. The phone shows NO OTHER NODES until another node joins the same ROS_DOMAIN_ID. That is normal: plain ros2 commands can still find it.")
             DocBullet("Host", "Use a sourced ROS 2 environment with rmw_fastrtps_cpp and the same ROS_DOMAIN_ID (default 0).")
-            DocBullet("Wi-Fi", "Use a regular ROS 2 node or subscriber on the network; the USB Link Monitor is not needed for Wi-Fi DDS.")
-            DocBullet("USB", "Enable Android USB tethering and USB DDS. Follow the companion USB Link Monitor guide for host diagnostics.")
+            DocBullet("Wi-Fi", "Use a regular ROS 2 node or subscriber on the network. If the router blocks multicast, set ROS_STATIC_PEERS on both the phone and the host.")
+            DocBullet("USB", "Enable Android USB tethering and USB DDS. Plain ros2 commands find the phone; the USB Link Monitor is optional for extra diagnostics.")
+        }
+
+        DocCard(title = "Visualize ROS 2 in Foxglove", icon = Icons.Default.Hub) {
+            Text("The USB Link Monitor and Foxglove Bridge are separate tools. The monitor observes DDS and sensor flow; the bridge exposes the ROS 2 graph to Foxglove over WebSocket.", style = MaterialTheme.typography.bodySmall)
+            DocBullet("Bridge", "In a sourced ROS 2 host environment, launch Foxglove Bridge. Use the same ROS_DOMAIN_ID and host RMW as the ROS 2 participant:")
+            DocCodeBlock("ros2 launch foxglove_bridge foxglove_bridge_launch.xml")
+            DocBullet("Connect", "In Foxglove choose Open a new connection -> Foxglove WebSocket and enter ws://localhost:8765 on the same computer.")
+            DocBullet("Verify", "Check the Data source topic list, then inspect a live ASR topic such as /asr_android_<device-id>/imu. The bridge package must be available in the sourced ROS 2 environment.")
+            DocBullet("USB diagnostics", "For USB tethering, optionally run the ASR USB Link Monitor in a separate terminal to inspect the selected interface and sensor callback rates.")
         }
     }
 }
