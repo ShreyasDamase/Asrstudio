@@ -53,20 +53,18 @@ class PacketParserTest {
     }
 
     @Test
-    fun emitsPacketsWithCrcFailureAndContinuesParsing() {
+    fun dropsPacketsWithCrcFailureAndContinuesParsing() {
         val parser = PacketParser()
         val bad = packet(seq = 5)
         bad[AsrVersion.HEADER_SIZE] = 0x55
         val good = packet(seq = 6)
 
-        val events = parser.accept(bad + good)
+        val packets = parser.accept(bad + good).filterIsInstance<PacketParserEvent.Packet>()
 
-        val badPacket = assertIs<PacketParserEvent.Packet>(events[0])
-        val goodPacket = assertIs<PacketParserEvent.Packet>(events[1])
-        assertEquals(5, badPacket.frame.seq)
-        assertEquals(false, badPacket.frame.crcValid)
-        assertEquals(6, goodPacket.frame.seq)
-        assertEquals(true, goodPacket.frame.crcValid)
+        // A corrupted packet is never emitted, and parsing continues with the next one.
+        assertEquals(1, packets.size)
+        assertEquals(6, packets[0].frame.seq)
+        assertEquals(true, packets[0].frame.crcValid)
     }
 
     @Test

@@ -19,9 +19,9 @@ ASR Studio's TCP connection and ROS 2 DDS are different paths. The desktop appli
 
 | Version | OS | Installer |
 | ------- | -- | --------- |
-| 1.0.1 | macOS | [DMG](https://github.com/ShreyasDamase/Asrstudio/releases/latest) |
-| 1.0.1 | Windows 10/11 x64 | [MSI](https://github.com/ShreyasDamase/Asrstudio/releases/latest) |
-| 1.0.1 | Ubuntu 24.04 x64 | [DEB](https://github.com/ShreyasDamase/Asrstudio/releases/latest) |
+| 1.0.2 | macOS | [DMG](https://github.com/ShreyasDamase/Asrstudio/releases/latest) |
+| 1.0.2 | Windows 10/11 x64 | [MSI](https://github.com/ShreyasDamase/Asrstudio/releases/latest) |
+| 1.0.2 | Ubuntu 24.04 x64 | [DEB](https://github.com/ShreyasDamase/Asrstudio/releases/latest) |
 
 The release page includes SHA-256 checksums for installer verification. ASR Studio packages include a bundled Java runtime, so a separate Java installation is not required to run the app.
 
@@ -42,7 +42,7 @@ From the repository root:
 ./gradlew :desktopApp:run
 ```
 
-The desktop distribution version is `1.0.1`. Open **About** in the app sidebar to see the application version and purpose.
+The desktop distribution version is `1.0.2`. Open **About** in the app sidebar to see the application version and purpose.
 
 ### Build native installers
 

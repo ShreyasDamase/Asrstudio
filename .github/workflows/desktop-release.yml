@@ -7,7 +7,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: desktop-release-v1.0.1
+  group: desktop-release-v1.0.2
   cancel-in-progress: false
 
 jobs:
@@ -35,7 +35,7 @@ jobs:
           New-Item -ItemType Directory -Force release-assets | Out-Null
           $msi = Get-ChildItem desktopApp\build\compose\binaries\main\msi -Filter *.msi -Recurse | Select-Object -First 1
           if (-not $msi) { throw "Gradle did not produce an MSI" }
-          Copy-Item $msi.FullName release-assets\ASR-Studio-1.0.1-windows-x64.msi
+          Copy-Item $msi.FullName release-assets\ASR-Studio-1.0.2-windows-x64.msi
           $installer = New-Object -ComObject WindowsInstaller.Installer
           $database = $installer.OpenDatabase($msi.FullName, 0)
           $query = 'SELECT `Value` FROM `Property` WHERE `Property` = ''ProductName'''
@@ -48,7 +48,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: windows-installer
-          path: release-assets/ASR-Studio-1.0.1-windows-x64.msi
+          path: release-assets/ASR-Studio-1.0.2-windows-x64.msi
           if-no-files-found: error
           retention-days: 7
 
@@ -72,10 +72,10 @@ jobs:
           mkdir -p release-assets
           deb="$(find desktopApp/build/compose/binaries/main/deb -type f -name '*.deb' -print -quit)"
           test -n "$deb"
-          cp "$deb" release-assets/ASR-Studio-1.0.1-ubuntu-24.04-x64.deb
+          cp "$deb" release-assets/ASR-Studio-1.0.2-ubuntu-24.04-x64.deb
           extracted="$RUNNER_TEMP/asr-studio-deb"
           mkdir -p "$extracted"
-          dpkg-deb --extract release-assets/ASR-Studio-1.0.1-ubuntu-24.04-x64.deb "$extracted"
+          dpkg-deb --extract release-assets/ASR-Studio-1.0.2-ubuntu-24.04-x64.deb "$extracted"
           launcher="$(find "$extracted" -type f -executable -path '*/bin/*' ! -path '*/lib/runtime/*' -print -quit)"
           if [ -z "$launcher" ]; then
             echo "No executable application launcher was found in the extracted DEB"
@@ -93,7 +93,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: ubuntu-installer
-          path: release-assets/ASR-Studio-1.0.1-ubuntu-24.04-x64.deb
+          path: release-assets/ASR-Studio-1.0.2-ubuntu-24.04-x64.deb
           if-no-files-found: error
           retention-days: 7
 
@@ -112,11 +112,11 @@ jobs:
           mkdir -p release-assets
           dmg="$(find desktopApp/build/compose/binaries/main/dmg -type f -name '*.dmg' -print -quit)"
           test -n "$dmg"
-          cp "$dmg" release-assets/ASR-Studio-1.0.1-macos.dmg
+          cp "$dmg" release-assets/ASR-Studio-1.0.2-macos.dmg
       - uses: actions/upload-artifact@v7
         with:
           name: macos-installer
-          path: release-assets/ASR-Studio-1.0.1-macos.dmg
+          path: release-assets/ASR-Studio-1.0.2-macos.dmg
           if-no-files-found: error
           retention-days: 7
 
@@ -135,13 +135,13 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          test -f release-assets/ASR-Studio-1.0.1-windows-x64.msi
-          test -f release-assets/ASR-Studio-1.0.1-ubuntu-24.04-x64.deb
-          test -f release-assets/ASR-Studio-1.0.1-macos.dmg
+          test -f release-assets/ASR-Studio-1.0.2-windows-x64.msi
+          test -f release-assets/ASR-Studio-1.0.2-ubuntu-24.04-x64.deb
+          test -f release-assets/ASR-Studio-1.0.2-macos.dmg
           sha256sum release-assets/*.msi release-assets/*.deb release-assets/*.dmg > release-assets/SHA256SUMS
-          gh release create v1.0.1 \
+          gh release create v1.0.2 \
             --repo "$GH_REPO" \
             --target "$GITHUB_SHA" \
-            --title "ASR Studio v1.0.1" \
+            --title "ASR Studio v1.0.2" \
             --notes "Cross-platform desktop release. Includes macOS DMG, Windows x64 MSI, Ubuntu 24.04 x64 DEB, and SHA-256 checksums. Installers bundle a Java runtime."
-          gh release upload v1.0.1 release-assets/* --repo "$GH_REPO" --clobber
+          gh release upload v1.0.2 release-assets/* --repo "$GH_REPO" --clobber
