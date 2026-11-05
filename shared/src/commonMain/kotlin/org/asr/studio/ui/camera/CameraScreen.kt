@@ -2,14 +2,18 @@ package org.asr.studio.ui.camera
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.RotateRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,6 +32,7 @@ fun CameraScreen(viewModel: CameraViewModel) {
     val lightSensor by viewModel.lightSensor.collectAsState()
     var flashlightOn by remember { mutableStateOf(false) }
     var brightness by remember { mutableStateOf(1.0f) }
+    var rotationDegrees by remember { mutableStateOf(0f) }
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val stackLightingPanel = maxWidth < 620.dp || maxHeight < 520.dp
@@ -41,7 +46,7 @@ fun CameraScreen(viewModel: CameraViewModel) {
                         Text("Connected: Waiting for camera packets...", style = MaterialTheme.typography.bodyLarge)
                     }
                     is CameraUiState.Streaming -> {
-                        CameraView(state.frame)
+                        CameraView(state.frame, rotationDegrees)
                     }
                 }
             }
@@ -52,6 +57,7 @@ fun CameraScreen(viewModel: CameraViewModel) {
                 lightSensor = lightSensor,
                 flashlightOn = flashlightOn,
                 brightness = brightness,
+                rotationDegrees = rotationDegrees,
                 onToggleFlashlight = {
                     flashlightOn = !flashlightOn
                     viewModel.toggleFlashlight()
@@ -59,6 +65,9 @@ fun CameraScreen(viewModel: CameraViewModel) {
                 onBrightnessChange = { level ->
                     brightness = level
                     viewModel.setFlashlightBrightness(level)
+                },
+                onRotate = {
+                    rotationDegrees = (rotationDegrees + 90f) % 360f
                 }
             )
         }
@@ -82,8 +91,10 @@ private fun LightingPanel(
     lightSensor: LightSensorData?,
     flashlightOn: Boolean,
     brightness: Float,
+    rotationDegrees: Float,
     onToggleFlashlight: () -> Unit,
     onBrightnessChange: (Float) -> Unit,
+    onRotate: () -> Unit,
 ) {
     val lux = lightSensor?.lux
     val luxLabel = when {
@@ -125,6 +136,28 @@ private fun LightingPanel(
             }
         }
 
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onRotate() }
+                .padding(horizontal = StudioSpacing.xs, vertical = StudioSpacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm),
+        ) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(StudioSpacing.xxs)) {
+                Text("Rotate Feed", style = MaterialTheme.typography.bodyMedium)
+                Text("Angle: ${rotationDegrees.toInt()}°", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.RotateRight,
+                contentDescription = "Rotate camera feed",
+                tint = StudioColors.accent,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+
+        HorizontalDivider(color = StudioColors.border.copy(alpha = 0.8f))
+
         StudioToggle(
             checked = flashlightOn,
             onCheckedChange = { onToggleFlashlight() },
@@ -163,13 +196,15 @@ private fun LightingPanel(
 }
 
 @Composable
-private fun CameraView(frame: CameraFrameData) {
+private fun CameraView(frame: CameraFrameData, rotationDegrees: Float) {
     Box(modifier = Modifier.fillMaxSize()) {
         if (frame.image != null) {
             Image(
                 bitmap = frame.image,
                 contentDescription = "Live Camera",
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer(rotationZ = rotationDegrees),
                 contentScale = ContentScale.Fit
             )
         } else {
