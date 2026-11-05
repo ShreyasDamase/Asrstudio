@@ -31,7 +31,7 @@ The release page includes SHA-256 checksums for installer verification. ASR Stud
 - JDK 17 or later.
 - Android phone running ASR Android Runtime.
 - For USB / ADB TCP, Android Debug Bridge and an authorized USB debugging connection.
-- For DDS, a separate ROS 2 host and the USB helper when monitoring a USB-tethered link. The helper is not needed for Wi-Fi DDS.
+- For DDS, a separate ROS 2 host. The USB helper is optional, for extra diagnostics on a USB-tethered link.
 
 ## Build and launch
 
